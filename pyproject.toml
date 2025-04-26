@@ -1,0 +1,60 @@
+[project]
+name = "vecsync"
+version = "0.1.0"
+description = "A simple command-line utility for synchronizing documents to vector storage for LLM interaction."
+readme = "README.md"
+authors = [
+    { name = "John Bencina", email = "jbencina@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+license = { file = "LICENSE" }
+
+keywords = [
+    "documents",
+    "llm",
+    "sync",
+    "cli",
+]
+
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "appdirs>=1.4.4",
+    "click>=8.1.8",
+    "openai>=1.76.0",
+    "pydantic>=2.11.3",
+    "python-dotenv>=1.1.0",
+    "termcolor>=3.0.1",
+    "tqdm>=4.67.1",
+]
+
+[project.scripts]
+vecsync = "vecsync:cli.cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "ruff>=0.11.6",
+]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
+
