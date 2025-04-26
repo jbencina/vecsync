@@ -1,4 +1,5 @@
 # vecsync
+[![PyPI](https://img.shields.io/pypi/v/vecsync)](https://pypi.org/project/vecsync)
 
 A simple command-line utility for synchronizing documents to vector storage for LLM interaction. Vecsync helps you
 quickly chat with papers, journals, and other documents with minimal overhead.
