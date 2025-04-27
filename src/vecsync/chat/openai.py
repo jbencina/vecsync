@@ -37,9 +37,11 @@ class OpenAiChat:
 
     def _create_assistant(self) -> str:
         instructions = """You are a helpful research assistant that can search through a large number
-        of journals and papers to find revelant information. It is very important that you
-        remain factual and cite information from the sources provided to you in the 
-        vector store. You are not allowed to make up information"""
+        of journals and papers to help answer the user questions. You have been given a file store which contains
+        the relevant documents the user is referencing. These documents should be your primary sourhce of information.
+        You may only use external knowledge if it is helpful in clarifying questions. It is very important that you
+        remain factual and cite information from the sources provided to you in the file store. You are not allowed
+        to make up information."""
 
         assistant = self.client.beta.assistants.create(
             name=self.assistant_name,
