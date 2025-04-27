@@ -5,12 +5,13 @@ from vecsync.store.openai import OpenAiVectorStore
 from vecsync.store.zotero import ZoteroStore
 from vecsync.store.file import FileStore
 from vecsync.settings import Settings
-from dotenv import load_dotenv
 
 # --- Store commands ---
 
+
 @click.command()
 def files():
+    """List files in the remote vector store."""
     store = OpenAiVectorStore("test")
     files = store.get_files()
 
@@ -18,19 +19,25 @@ def files():
     for file in files:
         cprint(f" - {file}", "yellow")
 
+
 @click.command()
 def delete():
+    """Delete all files in the remote vector store."""
     vstore = OpenAiVectorStore("test")
     vstore.delete()
 
+
 @click.group()
 def store():
+    """Manage the vector store."""
     pass
+
 
 store.add_command(files)
 store.add_command(delete)
 
 # --- Sync command (default behavior) ---
+
 
 @click.command()
 @click.option(
@@ -40,12 +47,16 @@ store.add_command(delete)
     default="file",
     help="Choose the source (file or zotero).",
 )
-@click.pass_context
-def sync(ctx, source: str):
+def sync(source: str):
+    """Sync files from local to remote vector store."""
     if source == "file":
         store = FileStore()
     elif source == "zotero":
-        store = ZoteroStore.client()
+        try:
+            store = ZoteroStore.client()
+        except FileNotFoundError as e:
+            cprint(f'Zotero not found at "{str(e)}". Aborting.', "red")
+            return
     else:
         raise ValueError("Invalid source. Use 'file' or 'zotero'.")
 
@@ -54,73 +65,74 @@ def sync(ctx, source: str):
 
     files = store.get_files()
 
-    cprint(f"Syncing {len(files)} files from local to OpenAI", "green")
+    cprint(f"Synching {len(files)} files from local to OpenAI", "green")
 
     result = vstore.sync(files)
     cprint("🏁 Sync results:", "green")
-    cprint(f"Saved: {result.files_saved} | Deleted: {result.files_deleted} | Skipped: {result.files_skipped} ", "yellow")
+    cprint(
+        f"Saved: {result.files_saved} | Deleted: {result.files_deleted} | Skipped: {result.files_skipped} ",
+        "yellow",
+    )
     cprint(f"Remote count: {result.updated_count}", "yellow")
     cprint(f"Duration: {result.duration:.2f} seconds", "yellow")
 
+
 # --- Assistant commands ---
 
-@click.command("create")
-def create_assistant():
-    client = OpenAiChat("test")
-    name = input("Enter a name for your assistant: ")
-    client.create(name)
 
 @click.command("chat")
-def chat_assistant():
-    client = OpenAiChat("test")
+@click.option(
+    "--new-conversation",
+    "-n",
+    is_flag=True,
+    help="Force the assistant to create a new thread.",
+)
+def chat_assistant(new_conversation: bool):
+    """Chat with the assistant."""
+    client = OpenAiChat("test", new_conversation=new_conversation)
+    print('Type "exit" to quit at any time.')
 
     while True:
-        prompt = input("Enter your prompt (or 'exit' to quit): ")
+        print()
+        prompt = input("> ")
         if prompt.lower() == "exit":
             break
         client.chat(prompt)
 
+
 @click.group()
 def assistant():
+    """Assistant commands."""
     pass
 
-assistant.add_command(create_assistant)
+
 assistant.add_command(chat_assistant)
 
 # --- Settings commands ---
 
+
 @click.command("delete")
 def delete_settings():
+    """Delete the settings file."""
     settings = Settings()
     settings.delete()
+
 
 @click.group()
 def settings():
     pass
 
+
 settings.add_command(delete_settings)
 
 # --- CLI Group (main entry point) ---
 
-@click.group(invoke_without_command=True)
-@click.option(
-    "--source",
-    "-s",
-    type=str,
-    default="file",
-    help="Choose the source (file or zotero).",
-)
-@click.pass_context
-def cli(ctx, source):
+
+@click.group()
+def cli():
     """vecsync CLI tool"""
-    load_dotenv(override=True)
+    pass
 
-    ctx.ensure_object(dict)
-    ctx.obj["source"] = source
-
-    if ctx.invoked_subcommand is None:
-        # Default to sync if no subcommand
-        ctx.invoke(sync, source=source)
 
 cli.add_command(store)
 cli.add_command(sync)

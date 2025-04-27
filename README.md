@@ -10,9 +10,10 @@ quickly chat with papers, journals, and other documents with minimal overhead.
 - 👀 Synchronize with a Zotero collection
 - 💬 Chat with documents from command line
 
-Currently vecsync only supports OpenAI vector stores and chat assistants in early development.
-
 ## Getting Started
+> **OpenAI API Requirements**
+>
+> Currently vecsync only supports OpenAI for remote operations and requires a valid OpenAI key with credits. Visit https://openai.com/api/ for more information. Future improvements will allow more platform options and self-hosted models.
 
 ### Installation
 Install vecsync from PyPI.
@@ -30,13 +31,15 @@ echo "OPENAI_API_KEY=…" > .env
 ```
 
 ### Usage
-Sync from local file path
+
+#### Synching Collections
+Use the `vs sync` command for all synching operations.
+
+Sync from local file path.
 ```bash
-cd path/to/pdfs
+cd path/to/pdfs && vs sync
 
-vecsync
-
-Syncing 2 files from local to OpenAI
+Synching 2 files from local to OpenAI
 Uploading 2 files to OpenAI file storage
 Attaching 2 files to OpenAI vector store
 
@@ -44,11 +47,11 @@ Attaching 2 files to OpenAI vector store
 Saved: 2 | Deleted: 0 | Skipped: 0 
 Remote count: 2
 Duration: 8.93 seconds
- ```
+```
 
- Sync from a Zotero collection
- ```
-vecsync -s zotero
+ Sync from a Zotero collection. Interactive selections are remembered for future sessions.
+```bash
+vs sync -s zotero
 
 Enter the path to your Zotero directory (Default: /Users/jbencina/Zotero): 
 
@@ -56,7 +59,7 @@ Available collections:
 [1]: My research
 Enter the collection ID to sync (Default: 1): 
 
-Syncing 15 files from local to OpenAI
+Synching 15 files from local to OpenAI
 Uploading 15 files to OpenAI file storage
 Attaching 15 files to OpenAI vector store
 
@@ -66,39 +69,50 @@ Remote count: 15
 Duration: 57.99 seconds
 ```
 
-Interactive setup options are saved and omitted from future syncs
+#### Settings
+
+Settings are persisted in a local json file which can be purged.
 ```bash
-❯ vecsync -s zotero       
-
-Syncing 15 files from local to OpenAI
-
-🏁 Sync results:
-Saved: 0 | Deleted: 0 | Skipped: 15 
-Remote count: 15
-Duration: 0.36 seconds
+vs settings delete
 ```
 
-Settings can be purged for reconfiguration
+#### Chat Interactions
+Use `vs assistant chat` to chat with uploaded documents via the command line. The responding assistant is automatically linked to your
+vector store.
+
 ```bash
-vecsync settings delete
+vs assistant chat
+✅ Assistant found: asst_123456789
+Type "exit" to quit at any time.
+
+> Give a one sentence summary of your vector store collection contents.
+💬 Conversation started: thread_123456789
+
+The contents of the vector store collection primarily focus on machine learning techniques for causal effect inference,particularly through adversarial representation learning methods that address challenges in treatment selection bias and information loss in observational data
 ```
 
-Uploaded documents can be interacted with via command line. The responding assistant is linked to your vector store.
-
+Conversations are remembered across sessions.
 ```bash
-vecsync assistant chat
+vs assistant chat   
+✅ Assistant found: asst_123456789
+✅ Thread found: thread_123456789
+Type "exit" to quit at any time.
 
-Enter your prompt (or 'exit' to quit): Give me a one sentence description of DragonNet
-
-DragonNet is a neural network model designed for estimating treatment effects from observational data, utilizing an end-to-end architecture that focuses on the efficiency of the propensity score and incorporates targeted regularization techniques to enhance estimation accuracy
+> What was my last question to you? 
+Your last question to me was asking for a one sentence summary of the contents of my vector store collection.
 ```
 
-You can also set up an assistant for further customization via web
+Threads can be cleared using the `-n` flag.
 ```bash
-vecsync assistant create
+vs assistant chat -n
+✅ Assistant found: asst_123456789
+Type "exit" to quit at any time.
 
-Enter a name for your assistant: My helpful assistant
-✅ Assistant created: asst_someAssistantId
-🔗 Assistant URL: https://platform.openai.com/assistants/asst_someAssistantId
+> What was my last question to you?
+💬 Conversation started: thread_987654321
+
+Your last question was about searching for relevant information from a large number of journals and papers, emphasizing the importance of citing information from the provided sources without making up any content.
+
+# Assistant response is in reference to the system prompt
 ```
 

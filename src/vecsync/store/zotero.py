@@ -2,7 +2,6 @@ import sqlite3
 from pydantic import BaseModel
 from pathlib import Path
 from vecsync.settings import Settings, SettingExists, SettingMissing
-from getpass import getuser
 from termcolor import cprint
 
 
@@ -34,14 +33,21 @@ class ZoteroStore:
 
         match settings["zotero_path"]:
             case SettingMissing():
-                # TODO: Make this portable across OSes
-                default_path = Path(f"/Users/{getuser()}/Zotero")
-                zotero_path = input(
+                default_path = Path.home() / "Zotero"
+                user_path = input(
                     f"Enter the path to your Zotero directory (Default: {default_path}): "
                 )
 
-                if zotero_path.strip() == "":
+                if user_path.strip() == "":
                     zotero_path = default_path
+                else:
+                    zotero_path = Path(user_path)
+
+                # Check if the path exists
+                if not Path(zotero_path).exists():
+                    raise FileNotFoundError(
+                        f"Zotero path '{zotero_path}' does not exist."
+                    )
 
                 settings["zotero_path"] = str(zotero_path)
             case SettingExists() as x:
