@@ -13,6 +13,8 @@ quickly chat with papers, journals, and other documents with minimal overhead.
 - 👀 Synchronize with a Zotero collection
 - 💬 Chat with documents from command line
 
+![demo](docs/images/demo.gif)
+
 ## Getting Started
 > **OpenAI API Requirements**
 >
