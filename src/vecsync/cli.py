@@ -78,18 +78,12 @@ def sync(ctx, source: str):
 # --- Assistant commands ---
 
 
-@click.command("create")
-def create_assistant():
-    client = OpenAiChat("test")
-    name = input("Enter a name for your assistant: ")
-    client.create(name)
-
-
 @click.command("chat")
 def chat_assistant():
     client = OpenAiChat("test")
 
     while True:
+        print()
         prompt = input("Enter your prompt (or 'exit' to quit): ")
         if prompt.lower() == "exit":
             break
@@ -101,7 +95,6 @@ def assistant():
     pass
 
 
-assistant.add_command(create_assistant)
 assistant.add_command(chat_assistant)
 
 # --- Settings commands ---
