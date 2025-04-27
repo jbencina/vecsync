@@ -41,10 +41,14 @@ class Settings:
             return SettingExists(key=key, value=result)
 
     def __delitem__(self, key: str):
-        data = json.loads(self.file.read_text())
+        with open(self.file, "r") as f:
+            data = json.load(f)
+
         if key in data:
             data.pop(key)
-            self._write(data)
+
+        with open(self.file, "w") as f:
+            json.dump(data, f)
 
     def __setitem__(self, key: str, value: str):
         with open(self.file, "r") as f:

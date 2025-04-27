@@ -35,7 +35,7 @@ def test_delete_settings(settings_fixture):
         data = json.load(f)
 
     assert "test" not in data
-    assert len(data) == 1
+    assert len(data) == 0
 
 
 def test_delete_settings_missing(settings_fixture):
