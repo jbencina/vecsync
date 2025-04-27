@@ -1,4 +1,5 @@
 import click
+from dotenv import load_dotenv
 from termcolor import cprint
 from vecsync.chat.openai import OpenAiChat
 from vecsync.store.openai import OpenAiVectorStore
@@ -7,6 +8,7 @@ from vecsync.store.file import FileStore
 from vecsync.settings import Settings
 
 # --- Store commands ---
+load_dotenv(override=True)
 
 
 @click.command()
@@ -111,9 +113,9 @@ assistant.add_command(chat_assistant)
 # --- Settings commands ---
 
 
-@click.command("delete")
-def delete_settings():
-    """Delete the settings file."""
+@click.command("clear")
+def clear_settings():
+    """Clear the settings file."""
     settings = Settings()
     settings.delete()
 
@@ -123,7 +125,7 @@ def settings():
     pass
 
 
-settings.add_command(delete_settings)
+settings.add_command(clear_settings)
 
 # --- CLI Group (main entry point) ---
 

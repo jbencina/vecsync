@@ -13,6 +13,8 @@ quickly chat with papers, journals, and other documents with minimal overhead.
 - 👀 Synchronize with a Zotero collection
 - 💬 Chat with documents from command line
 
+![demo](docs/images/demo.gif)
+
 ## Getting Started
 > **OpenAI API Requirements**
 >
@@ -76,7 +78,7 @@ Duration: 57.99 seconds
 
 Settings are persisted in a local json file which can be purged.
 ```bash
-vs settings delete
+vs settings clear
 ```
 
 #### Chat Interactions

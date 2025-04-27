@@ -1,6 +1,6 @@
 [project]
 name = "vecsync"
-version = "0.2.0"
+version = "0.3.0"
 description = "A simple command-line utility for synchronizing documents to vector storage for LLM interaction."
 readme = "README.md"
 authors = [

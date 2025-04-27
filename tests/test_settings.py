@@ -25,3 +25,20 @@ def test_read_settings(settings_fixture):
 def test_read_missing_setting(settings_fixture):
     settings = Settings(path=settings_fixture)
     assert type(settings["missing"]) is SettingMissing
+
+
+def test_delete_settings(settings_fixture):
+    settings = Settings(path=settings_fixture)
+    del settings["test"]
+
+    with open(settings_fixture, "r") as f:
+        data = json.load(f)
+
+    assert "test" not in data
+    assert len(data) == 0
+
+
+def test_delete_settings_missing(settings_fixture):
+    settings = Settings(path=settings_fixture)
+    del settings["doesNotExist"]
+    # No exception should be raised
