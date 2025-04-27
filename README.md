@@ -94,20 +94,22 @@ vector store.
 ```bash
 vecsync assistant chat
 ✅ Assistant found: asst_123456789
+Type "exit" to quit at any time.
 
-Enter your prompt (or 'exit' to quit): Give a one sentence summary of your vector store collection contents.
-Creating a new conversation
+> Give a one sentence summary of your vector store collection contents.
+💬 Conversation started: thread_123456789
 
-The contents of the vector store collection primarily focus on machine learning techniques for causal effect inference, particularly through adversarial representation learning methods that address challenges in treatment selection bias and information loss in observational data
+The contents of the vector store collection primarily focus on machine learning techniques for causal effect inference,particularly through adversarial representation learning methods that address challenges in treatment selection bias and information loss in observational data
 ```
 
 Subsequent interactions resume the current conversation.
 ```bash
 vecsync assistant chat   
 ✅ Assistant found: asst_123456789
-Continuing our conversation
+✅ Thread found: thread_123456789
+Type "exit" to quit at any time.
 
-Enter your prompt (or 'exit' to quit): What was my last question to you? 
+> What was my last question to you? 
 Your last question to me was asking for a one sentence summary of the contents of my vector store collection.
 ```
 
@@ -116,9 +118,10 @@ thread history was available.
 ```bash
 vecsync assistant chat -n
 ✅ Assistant found: asst_123456789
+Type "exit" to quit at any time.
 
-Enter your prompt (or 'exit' to quit): What was my last question to you?
-Creating a new conversation
+> What was my last question to you?
+💬 Conversation started: thread_987654321
 
 Your last question was about searching for relevant information from a large number of journals and papers, emphasizing the importance of citing information from the provided sources without making up any content.
 ```

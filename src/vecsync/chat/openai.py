@@ -22,7 +22,7 @@ class OpenAiChat:
             case SettingMissing():
                 return None
             case SettingExists() as x:
-                print("Continuing our conversation")
+                print(f"✅ Thread found: {x.value}")
                 return x.value
 
     def _get_or_create_assistant(self):
@@ -56,7 +56,7 @@ class OpenAiChat:
         settings = Settings()
         del settings["openai_thread_id"]
 
-        print(f"✅ Assistant created: {assistant.name}")
+        print(f"🖥️ Assistant created: {assistant.name}")
         print(
             f"🔗 Assistant URL: https://platform.openai.com/assistants/{assistant.id}"
         )
@@ -66,9 +66,9 @@ class OpenAiChat:
         settings = Settings()
 
         if self.thread_id is None:
-            print("Creating a new conversation")
             thread = self.client.beta.threads.create()
             self.thread_id = thread.id
+            print(f"💬 Conversation started: {self.thread_id}")
             settings["openai_thread_id"] = self.thread_id
 
         _ = self.client.beta.threads.messages.create(

@@ -87,10 +87,11 @@ def sync(ctx, source: str):
 )
 def chat_assistant(new_conversation: bool):
     client = OpenAiChat("test", new_conversation=new_conversation)
+    print('Type "exit" to quit at any time.')
 
     while True:
         print()
-        prompt = input("Enter your prompt (or 'exit' to quit): ")
+        prompt = input("> ")
         if prompt.lower() == "exit":
             break
         client.chat(prompt)
