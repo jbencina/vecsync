@@ -5,7 +5,6 @@ from vecsync.store.openai import OpenAiVectorStore
 from vecsync.store.zotero import ZoteroStore
 from vecsync.store.file import FileStore
 from vecsync.settings import Settings
-from dotenv import load_dotenv
 
 # --- Store commands ---
 
@@ -128,10 +127,12 @@ settings.add_command(delete_settings)
 
 # --- CLI Group (main entry point) ---
 
+
 @click.group()
 def cli():
     """vecsync CLI tool"""
     pass
+
 
 cli.add_command(store)
 cli.add_command(sync)
