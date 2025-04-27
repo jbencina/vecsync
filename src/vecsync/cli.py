@@ -55,7 +55,7 @@ def sync(source: str):
         try:
             store = ZoteroStore.client()
         except FileNotFoundError as e:
-            cprint(f'Zotero not found at "{e.filename}". Aborting.', "red")
+            cprint(f'Zotero not found at "{str(e)}". Aborting.', "red")
             return
     else:
         raise ValueError("Invalid source. Use 'file' or 'zotero'.")
