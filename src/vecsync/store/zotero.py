@@ -34,8 +34,7 @@ class ZoteroStore:
 
         match settings["zotero_path"]:
             case SettingMissing():
-                # TODO: Make this portable across OSes
-                default_path = Path(f"/Users/{getuser()}/Zotero")
+                default_path = Path.home() / "Zotero"
                 zotero_path = input(
                     f"Enter the path to your Zotero directory (Default: {default_path}): "
                 )

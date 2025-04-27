@@ -17,15 +17,17 @@ def test_resolve_path_existing(monkeypatch, settings_mock):
     assert str(path) == "/Users/alice/Zotero"
 
 
-def test_resolve_path_missing_default(monkeypatch, settings_mock):
+def test_resolve_path_missing_default(tmp_path, monkeypatch, settings_mock):
     settings = settings_mock({})
+    fake_home = tmp_path / "Zotero"
+
     monkeypatch.setattr("vecsync.store.zotero.Settings", lambda: settings)
-    monkeypatch.setattr("vecsync.store.zotero.getuser", lambda: "bob")
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
     monkeypatch.setattr(builtins, "input", lambda prompt="": "")
 
     path = ZoteroStore._resolve_path()
-    assert str(path) == "/Users/bob/Zotero"
-    assert settings["zotero_path"].value == "/Users/bob/Zotero"
+    assert path == fake_home
+    assert settings["zotero_path"].value == str(fake_home)
     assert type(settings["zotero_path"]) is SettingExists
 
 
