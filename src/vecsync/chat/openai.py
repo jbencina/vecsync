@@ -13,9 +13,9 @@ class OpenAiChat:
         self.assistant_name = f"vecsync-{self.vector_store.store.name}"
         self.assistant_id = self._get_or_create_assistant()
 
-        self.thread_id = None if new_conversation else self._get_thead_id()
+        self.thread_id = None if new_conversation else self._get_thread_id()
 
-    def _get_thead_id(self) -> str | None:
+    def _get_thread_id(self) -> str | None:
         settings = Settings()
 
         match settings["openai_thread_id"]:
