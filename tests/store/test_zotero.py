@@ -14,7 +14,7 @@ def test_resolve_path_existing(monkeypatch, settings_mock):
         lambda: settings_mock({"zotero_path": "/Users/alice/Zotero"}),
     )
     path = ZoteroStore._resolve_path()
-    assert str(path) == "/Users/alice/Zotero"
+    assert path == Path("/Users/alice/Zotero")
 
 
 def test_resolve_path_missing_default(tmp_path, monkeypatch, settings_mock):
