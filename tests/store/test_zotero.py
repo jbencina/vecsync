@@ -20,8 +20,10 @@ def test_resolve_path_existing(monkeypatch, settings_mock):
 def test_resolve_path_missing_default(tmp_path, monkeypatch, settings_mock):
     settings = settings_mock({})
     fake_home = tmp_path / "Zotero"
+    fake_home.mkdir(parents=True, exist_ok=True)
 
     monkeypatch.setattr("vecsync.store.zotero.Settings", lambda: settings)
+
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
     monkeypatch.setattr(builtins, "input", lambda prompt="": "")
 
@@ -31,14 +33,18 @@ def test_resolve_path_missing_default(tmp_path, monkeypatch, settings_mock):
     assert type(settings["zotero_path"]) is SettingExists
 
 
-def test_resolve_path_missing_prompt(monkeypatch, settings_mock):
+def test_resolve_path_missing_prompt(tmp_path, monkeypatch, settings_mock):
     settings = settings_mock({})
     monkeypatch.setattr("vecsync.store.zotero.Settings", lambda: settings)
-    monkeypatch.setattr(builtins, "input", lambda prompt="": "/Users/carol/Zotero")
+
+    fake_home = tmp_path / "Users/carol/Zotero"
+    fake_home.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr(builtins, "input", lambda prompt="": str(fake_home))
 
     path = ZoteroStore._resolve_path()
-    assert str(path) == "/Users/carol/Zotero"
-    assert settings["zotero_path"].value == "/Users/carol/Zotero"
+    assert path == fake_home
+    assert settings["zotero_path"].value == str(fake_home)
     assert type(settings["zotero_path"]) is SettingExists
 
 
