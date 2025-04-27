@@ -45,8 +45,6 @@ class Settings:
         if key in data:
             data.pop(key)
             self._write(data)
-        else:
-            raise KeyError(f"Setting '{key}' not found")
 
     def __setitem__(self, key: str, value: str):
         with open(self.file, "r") as f:
