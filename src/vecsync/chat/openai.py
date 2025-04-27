@@ -1,10 +1,11 @@
 from openai import AssistantEventHandler, OpenAI
 from vecsync.store.openai import OpenAiVectorStore
+from vecsync.settings import Settings, SettingExists, SettingMissing
 import sys
 
 
 class OpenAiChat:
-    def __init__(self, store_name: str):
+    def __init__(self, store_name: str, new_conversation: bool = False):
         self.client = OpenAI()
         self.vector_store = OpenAiVectorStore(store_name)
         self.vector_store.get()
@@ -12,7 +13,17 @@ class OpenAiChat:
         self.assistant_name = f"vecsync-{self.vector_store.store.name}"
         self.assistant_id = self._get_or_create_assistant()
 
-        self.thread = None
+        self.thread_id = None if new_conversation else self._get_thead_id()
+
+    def _get_thead_id(self) -> str | None:
+        settings = Settings()
+
+        match settings["openai_thread_id"]:
+            case SettingMissing():
+                return None
+            case SettingExists() as x:
+                print("Continuing our conversation")
+                return x.value
 
     def _get_or_create_assistant(self):
         existing_assistants = self.client.beta.assistants.list()
@@ -42,6 +53,9 @@ class OpenAiChat:
             model="gpt-4o-mini",
         )
 
+        settings = Settings()
+        del settings["openai_thread_id"]
+
         print(f"✅ Assistant created: {assistant.name}")
         print(
             f"🔗 Assistant URL: https://platform.openai.com/assistants/{assistant.id}"
@@ -49,17 +63,22 @@ class OpenAiChat:
         return assistant.id
 
     def chat(self, prompt: str) -> str:
-        if self.thread is None:
-            self.thread = self.client.beta.threads.create()
+        settings = Settings()
+
+        if self.thread_id is None:
+            print("Creating a new conversation")
+            thread = self.client.beta.threads.create()
+            self.thread_id = thread.id
+            settings["openai_thread_id"] = self.thread_id
 
         _ = self.client.beta.threads.messages.create(
-            thread_id=self.thread.id,
+            thread_id=self.thread_id,
             role="user",
             content=prompt,
         )
 
         with self.client.beta.threads.runs.stream(
-            thread_id=self.thread.id,
+            thread_id=self.thread_id,
             assistant_id=self.assistant_id,
             event_handler=PrintHandler(),
         ) as stream:

@@ -79,8 +79,14 @@ def sync(ctx, source: str):
 
 
 @click.command("chat")
-def chat_assistant():
-    client = OpenAiChat("test")
+@click.option(
+    "--new-conversation",
+    "-n",
+    is_flag=True,
+    help="Force the assistant to create a new thread.",
+)
+def chat_assistant(new_conversation: bool):
+    client = OpenAiChat("test", new_conversation=new_conversation)
 
     while True:
         print()

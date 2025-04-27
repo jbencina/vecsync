@@ -30,6 +30,8 @@ echo "OPENAI_API_KEY=…" > .env
 ```
 
 ### Usage
+
+#### Syncing Collections
 Sync from local file path
 ```bash
 cd path/to/pdfs
@@ -66,7 +68,7 @@ Remote count: 15
 Duration: 57.99 seconds
 ```
 
-Interactive setup options are saved and omitted from future syncs
+Setup choices are saved and omitted from future syncs
 ```bash
 ❯ vecsync -s zotero       
 
@@ -78,28 +80,46 @@ Remote count: 15
 Duration: 0.36 seconds
 ```
 
-Settings can be purged for reconfiguration
+#### Settings
+
+Settings are persisted in a local json file. These can be purged at any point.
 ```bash
 vecsync settings delete
 ```
 
+#### Chat Interactions
 Uploaded documents can be interacted with via command line. The responding assistant is automatically linked to your
 vector store.
 
-
 ```bash
 vecsync assistant chat
+✅ Assistant found: asst_123456789
 
-✅ Assistant found: asst_12345
+Enter your prompt (or 'exit' to quit): Give a one sentence summary of your vector store collection contents.
+Creating a new conversation
 
-Enter your prompt (or 'exit' to quit): Give me a one sentence description of DragonNet
+The contents of the vector store collection primarily focus on machine learning techniques for causal effect inference, particularly through adversarial representation learning methods that address challenges in treatment selection bias and information loss in observational data
+```
 
-DragonNet is a neural network model designed for estimating treatment effects from observational data, utilizing an 
-end-to-end architecture that focuses on the efficiency of the propensity score and incorporates targeted 
-regularization techniques to enhance estimation accuracy
+Subsequent interactions resume the current conversation.
+```bash
+vecsync assistant chat   
+✅ Assistant found: asst_123456789
+Continuing our conversation
 
-Enter your prompt (or 'exit' to quit): what was my last question to you in this chat?
+Enter your prompt (or 'exit' to quit): What was my last question to you? 
+Your last question to me was asking for a one sentence summary of the contents of my vector store collection.
+```
 
-Your last question was to explain "dragonnet" in one sentence.
+Threads can be cleared using the `-n` flag. Here the assistant defaulted to the system prompt as a question since no
+thread history was available.
+```bash
+vecsync assistant chat -n
+✅ Assistant found: asst_123456789
+
+Enter your prompt (or 'exit' to quit): What was my last question to you?
+Creating a new conversation
+
+Your last question was about searching for relevant information from a large number of journals and papers, emphasizing the importance of citing information from the provided sources without making up any content.
 ```
 
