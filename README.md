@@ -83,22 +83,23 @@ Settings can be purged for reconfiguration
 vecsync settings delete
 ```
 
-Uploaded documents can be interacted with via command line. The responding assistant is linked to your vector store.
+Uploaded documents can be interacted with via command line. The responding assistant is automatically linked to your
+vector store.
+
 
 ```bash
 vecsync assistant chat
 
+✅ Assistant found: asst_12345
+
 Enter your prompt (or 'exit' to quit): Give me a one sentence description of DragonNet
 
-DragonNet is a neural network model designed for estimating treatment effects from observational data, utilizing an end-to-end architecture that focuses on the efficiency of the propensity score and incorporates targeted regularization techniques to enhance estimation accuracy
-```
+DragonNet is a neural network model designed for estimating treatment effects from observational data, utilizing an 
+end-to-end architecture that focuses on the efficiency of the propensity score and incorporates targeted 
+regularization techniques to enhance estimation accuracy
 
-You can also set up an assistant for further customization via web
-```bash
-vecsync assistant create
+Enter your prompt (or 'exit' to quit): what was my last question to you in this chat?
 
-Enter a name for your assistant: My helpful assistant
-✅ Assistant created: asst_someAssistantId
-🔗 Assistant URL: https://platform.openai.com/assistants/asst_someAssistantId
+Your last question was to explain "dragonnet" in one sentence.
 ```
 
