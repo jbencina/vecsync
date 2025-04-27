@@ -26,14 +26,14 @@ class OpenAiChat:
                 return x.value
 
     def _get_or_create_assistant(self):
-        existing_assistants = self.client.beta.assistants.list()
+        settings = Settings()
 
-        for assistant in existing_assistants:
-            if assistant.name == self.assistant_name:
-                print(f"✅ Assistant found: {assistant.id}")
-                return assistant.id
-
-        return self._create_assistant()
+        match settings["openai_assistant_id"]:
+            case SettingExists() as x:
+                print(f"✅ Assistant found: {x.value}")
+                return x.value
+            case _:
+                return self._create_assistant()
 
     def _create_assistant(self) -> str:
         instructions = """You are a helpful research assistant that can search through a large number
@@ -55,11 +55,13 @@ class OpenAiChat:
 
         settings = Settings()
         del settings["openai_thread_id"]
+        del settings["openai_assistant_id"]
 
         print(f"🖥️ Assistant created: {assistant.name}")
         print(
             f"🔗 Assistant URL: https://platform.openai.com/assistants/{assistant.id}"
         )
+        settings["openai_assistant_id"] = assistant.id
         return assistant.id
 
     def chat(self, prompt: str) -> str:
