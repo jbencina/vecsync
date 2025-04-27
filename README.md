@@ -76,7 +76,7 @@ Duration: 57.99 seconds
 
 Settings are persisted in a local json file which can be purged.
 ```bash
-vs settings delete
+vs settings clear
 ```
 
 #### Chat Interactions
