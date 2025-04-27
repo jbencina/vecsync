@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 @click.command()
 def files():
+    """List files in the remote vector store."""
     store = OpenAiVectorStore("test")
     files = store.get_files()
 
@@ -22,12 +23,14 @@ def files():
 
 @click.command()
 def delete():
+    """Delete all files in the remote vector store."""
     vstore = OpenAiVectorStore("test")
     vstore.delete()
 
 
 @click.group()
 def store():
+    """Manage the vector store."""
     pass
 
 
@@ -45,8 +48,8 @@ store.add_command(delete)
     default="file",
     help="Choose the source (file or zotero).",
 )
-@click.pass_context
-def sync(ctx, source: str):
+def sync(source: str):
+    """Sync files from local to remote vector store."""
     if source == "file":
         store = FileStore()
     elif source == "zotero":
@@ -63,7 +66,7 @@ def sync(ctx, source: str):
 
     files = store.get_files()
 
-    cprint(f"Syncing {len(files)} files from local to OpenAI", "green")
+    cprint(f"Synching {len(files)} files from local to OpenAI", "green")
 
     result = vstore.sync(files)
     cprint("🏁 Sync results:", "green")
@@ -86,6 +89,7 @@ def sync(ctx, source: str):
     help="Force the assistant to create a new thread.",
 )
 def chat_assistant(new_conversation: bool):
+    """Chat with the assistant."""
     client = OpenAiChat("test", new_conversation=new_conversation)
     print('Type "exit" to quit at any time.')
 
@@ -99,6 +103,7 @@ def chat_assistant(new_conversation: bool):
 
 @click.group()
 def assistant():
+    """Assistant commands."""
     pass
 
 
@@ -109,6 +114,7 @@ assistant.add_command(chat_assistant)
 
 @click.command("delete")
 def delete_settings():
+    """Delete the settings file."""
     settings = Settings()
     settings.delete()
 
@@ -122,27 +128,10 @@ settings.add_command(delete_settings)
 
 # --- CLI Group (main entry point) ---
 
-
-@click.group(invoke_without_command=True)
-@click.option(
-    "--source",
-    "-s",
-    type=str,
-    default="file",
-    help="Choose the source (file or zotero).",
-)
-@click.pass_context
-def cli(ctx, source):
+@click.group()
+def cli():
     """vecsync CLI tool"""
-    load_dotenv(override=True)
-
-    ctx.ensure_object(dict)
-    ctx.obj["source"] = source
-
-    if ctx.invoked_subcommand is None:
-        # Default to sync if no subcommand
-        ctx.invoke(sync, source=source)
-
+    pass
 
 cli.add_command(store)
 cli.add_command(sync)
