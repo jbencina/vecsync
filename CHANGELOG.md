@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## [0.0.4]
 ### Added
 - Basic Gradio chat interface with previous message history
+- Pre-commit hooks for Ruff format and check
 ### Changed
 - Coverage report now covers all files
 
