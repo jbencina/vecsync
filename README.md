@@ -11,7 +11,7 @@ quickly chat with papers, journals, and other documents with minimal overhead.
 - ✅ Automatically add and remove remote files to match local documents
 - ☺️ Simplify platform specific complexities
 - 👀 Synchronize with a Zotero collection
-- 💬 Chat with documents from command line
+- 💬 Chat with documents from command line or local Gradio UI
 
 ![demo](docs/images/demo.gif)
 
@@ -33,6 +33,16 @@ export OPENAI_API_KEY=...
 You can also define the key via `.env` file using [dotenv](https://pypi.org/project/python-dotenv/)
 ```
 echo "OPENAI_API_KEY=…" > .env
+```
+
+### Development
+This project is still in early alpha, and users should frequent updates. Breaking changes will be avoided where possible.
+To use the latest code, clone the repository and install locally. In progress work uses the branch naming convention
+of `dev-0.0.1` and will have an accompanying open PR.
+```bash
+git clone -b dev-0.0.1 git@github.com:jbencina/vecsync.git
+cd vecsync
+uv sync && source .venv/bin/activate
 ```
 
 ### Usage
@@ -83,7 +93,7 @@ vs settings clear
 
 #### Chat Interactions
 Use `vs assistant chat` to chat with uploaded documents via the command line. The responding assistant is automatically linked to your
-vector store.
+vector store. Alternatively, you can use `vs assistant ui` to spawn a local Gradio instance.
 
 ```bash
 vs assistant chat
