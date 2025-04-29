@@ -132,15 +132,24 @@ class OpenAiChat:
                         response += content_delta.text.value
                         yield response
 
-    def gradio_chat(self):
-        history = self.load_history()
+    def gradio_chat(self, load_history: bool = True):
+        history = self.load_history() if load_history else []
 
         bot = gr.Chatbot(value=history, type="messages")
-        gr.ChatInterface(
-            fn=self.gradio_prompt,
-            type="messages",
-            chatbot=bot,
-        ).launch()
+
+        with gr.Blocks(theme=gr.themes.Base()) as demo:
+            gr.Markdown(
+                """
+                <center><h1>Vecsync Assistant</h1></center>
+                """
+            )
+            gr.ChatInterface(
+                fn=self.gradio_prompt,
+                type="messages",
+                chatbot=bot,
+            )
+
+        demo.launch()
 
 
 class PrintHandler(AssistantEventHandler):

@@ -15,6 +15,9 @@ quickly chat with papers, journals, and other documents with minimal overhead.
 
 ![demo](docs/images/demo.gif)
 
+Local [Gradio](https://www.gradio.app) instance available for assistant interaction. Chat history across sessions is saved.
+![chat](docs/images/demo_chat.png)
+
 ## Getting Started
 > **OpenAI API Requirements**
 >
