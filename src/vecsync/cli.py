@@ -102,6 +102,12 @@ def chat_assistant(new_conversation: bool):
         client.chat(prompt)
 
 
+@click.command("ui")
+def chat_ui():
+    client = OpenAiChat("test")
+    client.gradio_chat()
+
+
 @click.group()
 def assistant():
     """Assistant commands."""
@@ -109,6 +115,7 @@ def assistant():
 
 
 assistant.add_command(chat_assistant)
+assistant.add_command(chat_ui)
 
 # --- Settings commands ---
 

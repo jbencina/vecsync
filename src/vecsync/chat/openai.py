@@ -1,6 +1,7 @@
 from openai import AssistantEventHandler, OpenAI
 from vecsync.store.openai import OpenAiVectorStore
 from vecsync.settings import Settings, SettingExists, SettingMissing
+import gradio as gr
 import sys
 
 
@@ -66,6 +67,23 @@ class OpenAiChat:
         settings["openai_assistant_id"] = assistant.id
         return assistant.id
 
+    def load_history(self) -> list[dict[str, str]]:
+        """Fetch all prior messages in this thread and return as a Gradio-style list of tuples."""
+        history = []
+        if self.thread_id is not None:
+            resp = self.client.beta.threads.messages.list(thread_id=self.thread_id)
+            resp_data = sorted(resp.data, key=lambda x: x.created_at)
+
+            for msg in resp_data:
+                content = ""
+                for c in msg.content:
+                    if c.type == "text":
+                        content += c.text.value
+
+                history.append(dict(role=msg.role, content=content))
+
+        return history
+
     def chat(self, prompt: str) -> str:
         settings = Settings()
 
@@ -87,6 +105,42 @@ class OpenAiChat:
             event_handler=PrintHandler(),
         ) as stream:
             stream.until_done()
+
+    def gradio_prompt(self, message, history):
+        _ = self.client.beta.threads.messages.create(
+            thread_id=self.thread_id,
+            role="user",
+            content=message,
+        )
+
+        stream = self.client.beta.threads.runs.create(
+            thread_id=self.thread_id,
+            assistant_id=self.assistant_id,
+            stream=True,
+        )
+
+        response = ""
+
+        for event in stream:
+            if event.event == "thread.message.delta":
+                for content_delta in event.data.delta.content or []:
+                    if (
+                        content_delta.type == "text"
+                        and content_delta.text
+                        and content_delta.text.value
+                    ):
+                        response += content_delta.text.value
+                        yield response
+
+    def gradio_chat(self):
+        history = self.load_history()
+
+        bot = gr.Chatbot(value=history, type="messages")
+        gr.ChatInterface(
+            fn=self.gradio_prompt,
+            type="messages",
+            chatbot=bot,
+        ).launch()
 
 
 class PrintHandler(AssistantEventHandler):
