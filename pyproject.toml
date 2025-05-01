@@ -10,10 +10,19 @@ requires-python = ">=3.13"
 license = { file = "LICENSE" }
 
 keywords = [
-    "documents",
-    "llm",
-    "sync",
     "cli",
+    "command-line",
+    "pdf",
+    "documents",
+    "vector search",
+    "embeddings",
+    "semantic search",
+    "information retrieval",
+    "llm",
+    "chatbot",
+    "zotero",
+    "gradio",
+    "sync",
 ]
 
 classifiers = [
@@ -47,6 +56,12 @@ dependencies = [
 
 [project.scripts]
 vs = "vecsync.cli:cli"
+
+[project.urls]
+Homepage = "https://vecsync.io"
+Repository = "https://github.com/jbencina/vecsync"
+Issues = "https://github.com/jbencina/vecsync/issues"
+Changelog = "https://github.com/jbencina/vecsync/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]
