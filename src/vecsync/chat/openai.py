@@ -121,16 +121,29 @@ class OpenAiChat:
         )
 
         response = ""
+        annotations = {}
 
         for event in stream:
             if event.event == "thread.message.delta":
-                for content_delta in event.data.delta.content or []:
-                    if (
-                        content_delta.type == "text"
-                        and content_delta.text
-                        and content_delta.text.value
-                    ):
-                        response += content_delta.text.value
+                for content in event.data.delta.content or []:
+                    if content.type == "text":
+                        if content.text.annotations:
+                            for annotation in content.text.annotations:
+                                if annotation.type == "file_citation":
+                                    annotations[annotation.text] = (
+                                        annotation.file_citation.file_id
+                                    )
+
+                        text = content.text.value
+
+                        # TODO: Get file name from file_id
+                        # TODO: Get actual quote?
+                        # TODO: Apply to history
+                        for key, value in annotations.items():
+                            v = f"<span style='color: yellow;'>[{value}]</span>"
+                            text = text.replace(key, v)
+
+                        response += text
                         yield response
 
     def gradio_chat(self, load_history: bool = True):
