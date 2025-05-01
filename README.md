@@ -1,4 +1,5 @@
 # vecsync
+[![GitHub](https://img.shields.io/badge/GitHub-repo-green.svg)](https://github.com/jbencina/vecsync)
 [![PyPI](https://img.shields.io/pypi/v/vecsync)](https://pypi.org/project/vecsync)
 [![image](https://img.shields.io/pypi/l/vecsync.svg)](https://pypi.python.org/pypi/vecsync)
 [![image](https://img.shields.io/pypi/pyversions/vecsync.svg)](https://pypi.python.org/pypi/vecsync)
