@@ -135,21 +135,41 @@ class OpenAiChat:
     def gradio_chat(self, load_history: bool = True):
         history = self.load_history() if load_history else []
 
-        bot = gr.Chatbot(value=history, type="messages")
+        # Gradio doesn't automatically scroll to the bottom of the chat window to accomodate
+        # chat history so we add some JavaScript to perform this action on load
+        # See: https://github.com/gradio-app/gradio/issues/11109
 
-        with gr.Blocks(theme=gr.themes.Base()) as demo:
+        js = """
+                function Scrolldown() {
+                const targetNode = document.querySelector('[aria-label="chatbot conversation"]');
+                if (!targetNode) return;
+
+                targetNode.scrollTop = targetNode.scrollHeight;
+
+                const observer = new MutationObserver(() => {
+                    targetNode.scrollTop = targetNode.scrollHeight;
+                });
+
+                observer.observe(targetNode, { childList: true, subtree: true });
+                }
+
+            """
+        with gr.Blocks(theme=gr.themes.Base(), js=js) as demo:
+            bot = gr.Chatbot(value=history, height="70vh", type="messages")
+
             gr.Markdown(
                 """
                 <center><h1>Vecsync Assistant</h1></center>
                 """
             )
+
             gr.ChatInterface(
                 fn=self.gradio_prompt,
                 type="messages",
                 chatbot=bot,
             )
 
-        demo.launch()
+            demo.launch()
 
 
 class PrintHandler(AssistantEventHandler):
