@@ -68,7 +68,7 @@ class OpenAiChat:
         return assistant.id
 
     def load_history(self) -> list[dict[str, str]]:
-        """Fetch all prior messages in this thread and return as a Gradio-style list of tuples."""
+        """Fetch all prior messages in this thread"""
         history = []
         if self.thread_id is not None:
             resp = self.client.beta.threads.messages.list(thread_id=self.thread_id)
