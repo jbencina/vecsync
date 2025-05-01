@@ -1,6 +1,7 @@
 from openai import AssistantEventHandler, OpenAI
 from vecsync.store.openai import OpenAiVectorStore
 from vecsync.settings import Settings, SettingExists, SettingMissing
+import gradio as gr
 import sys
 
 
@@ -66,6 +67,23 @@ class OpenAiChat:
         settings["openai_assistant_id"] = assistant.id
         return assistant.id
 
+    def load_history(self) -> list[dict[str, str]]:
+        """Fetch all prior messages in this thread"""
+        history = []
+        if self.thread_id is not None:
+            resp = self.client.beta.threads.messages.list(thread_id=self.thread_id)
+            resp_data = sorted(resp.data, key=lambda x: x.created_at)
+
+            for msg in resp_data:
+                content = ""
+                for c in msg.content:
+                    if c.type == "text":
+                        content += c.text.value
+
+                history.append(dict(role=msg.role, content=content))
+
+        return history
+
     def chat(self, prompt: str) -> str:
         settings = Settings()
 
@@ -87,6 +105,71 @@ class OpenAiChat:
             event_handler=PrintHandler(),
         ) as stream:
             stream.until_done()
+
+    def gradio_prompt(self, message, history):
+        _ = self.client.beta.threads.messages.create(
+            thread_id=self.thread_id,
+            role="user",
+            content=message,
+        )
+
+        stream = self.client.beta.threads.runs.create(
+            thread_id=self.thread_id,
+            assistant_id=self.assistant_id,
+            stream=True,
+        )
+
+        response = ""
+
+        for event in stream:
+            if event.event == "thread.message.delta":
+                for content_delta in event.data.delta.content or []:
+                    if (
+                        content_delta.type == "text"
+                        and content_delta.text
+                        and content_delta.text.value
+                    ):
+                        response += content_delta.text.value
+                        yield response
+
+    def gradio_chat(self, load_history: bool = True):
+        history = self.load_history() if load_history else []
+
+        # Gradio doesn't automatically scroll to the bottom of the chat window to accomodate
+        # chat history so we add some JavaScript to perform this action on load
+        # See: https://github.com/gradio-app/gradio/issues/11109
+
+        js = """
+                function Scrolldown() {
+                const targetNode = document.querySelector('[aria-label="chatbot conversation"]');
+                if (!targetNode) return;
+
+                targetNode.scrollTop = targetNode.scrollHeight;
+
+                const observer = new MutationObserver(() => {
+                    targetNode.scrollTop = targetNode.scrollHeight;
+                });
+
+                observer.observe(targetNode, { childList: true, subtree: true });
+                }
+
+            """
+        with gr.Blocks(theme=gr.themes.Base(), js=js) as demo:
+            bot = gr.Chatbot(value=history, height="70vh", type="messages")
+
+            gr.Markdown(
+                """
+                <center><h1>Vecsync Assistant</h1></center>
+                """
+            )
+
+            gr.ChatInterface(
+                fn=self.gradio_prompt,
+                type="messages",
+                chatbot=bot,
+            )
+
+            demo.launch()
 
 
 class PrintHandler(AssistantEventHandler):

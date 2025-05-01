@@ -1,6 +1,6 @@
 [project]
 name = "vecsync"
-version = "0.3.0"
+version = "0.4.0"
 description = "A simple command-line utility for synchronizing documents to vector storage for LLM interaction."
 readme = "README.md"
 authors = [
@@ -10,27 +10,43 @@ requires-python = ">=3.13"
 license = { file = "LICENSE" }
 
 keywords = [
-    "documents",
-    "llm",
-    "sync",
     "cli",
+    "command-line",
+    "pdf",
+    "documents",
+    "vector search",
+    "embeddings",
+    "semantic search",
+    "information retrieval",
+    "llm",
+    "chatbot",
+    "zotero",
+    "gradio",
+    "sync",
 ]
 
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
-    "Environment :: Console",
+    "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Environment :: Console",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.13",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
-    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Topic :: Utilities",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 
 dependencies = [
     "appdirs>=1.4.4",
     "click>=8.1.8",
+    "gradio>=5.27.1",
     "openai>=1.76.0",
     "pydantic>=2.11.3",
     "python-dotenv>=1.1.0",
@@ -39,8 +55,13 @@ dependencies = [
 ]
 
 [project.scripts]
-vecsync = "vecsync:cli.cli"
 vs = "vecsync.cli:cli"
+
+[project.urls]
+Homepage = "https://vecsync.io"
+Repository = "https://github.com/jbencina/vecsync"
+Issues = "https://github.com/jbencina/vecsync/issues"
+Changelog = "https://github.com/jbencina/vecsync/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]
@@ -48,6 +69,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.2.0",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "ruff>=0.11.6",
