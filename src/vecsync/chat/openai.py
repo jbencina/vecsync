@@ -17,6 +17,8 @@ class OpenAiChat:
 
         self.thread_id = None if new_conversation else self._get_thread_id()
 
+        self.files = None
+
     def _get_thread_id(self) -> str | None:
         settings = Settings()
 
@@ -88,6 +90,9 @@ class OpenAiChat:
     def chat(self, prompt: str) -> str:
         settings = Settings()
 
+        if self.files is None:
+            self.files = {f.id: f.name for f in self.vector_store.get_files()}
+
         if self.thread_id is None:
             thread = self.client.beta.threads.create()
             self.thread_id = thread.id
@@ -103,7 +108,7 @@ class OpenAiChat:
         with self.client.beta.threads.runs.stream(
             thread_id=self.thread_id,
             assistant_id=self.assistant_id,
-            event_handler=PrintHandler(),
+            event_handler=PrintHandler(files=self.files),
         ) as stream:
             stream.until_done()
 
@@ -189,25 +194,44 @@ class OpenAiChat:
 class PrintHandler(AssistantEventHandler):
     """Helper to print each text delta as it streams."""
 
+    def __init__(self, files: dict[str, str] = None):
+        super().__init__()
+        self.files = files
+        self.annotations = {}
+
     def on_message_delta(self, delta, snapshot):
-        annotations = {}
+        delta_annotations = {}
         for content in delta.content:
             if content.type == "text":
                 if content.text.annotations:
                     for annotation in content.text.annotations:
                         if annotation.type == "file_citation":
-                            annotations[annotation.text] = (
+                            delta_annotations[annotation.text] = (
                                 annotation.file_citation.file_id
                             )
 
                 text = content.text.value
 
-                if len(annotations) > 0:
-                    # TODO: Get file name from file_id
-                    # TODO: Get actual quote?
-                    for key, value in annotations.items():
-                        colored_cite = colored(f"[{value}]", "yellow")
-                        text = text.replace(key, colored_cite)
+                if len(delta_annotations) > 0:
+                    for ref_id, file_id in delta_annotations.items():
+                        # Update main lookup assigning a unique index to each citation
+                        # TODO: If there are multiple references to the same file then it prints the id several
+                        # times such as "[1] [1] [1]". This should be fixed.
+                        self.annotations.setdefault(file_id, len(self.annotations) + 1)
+                        citation_id = self.annotations[file_id]
+
+                        colored_cite = colored(f"[{citation_id}]", "yellow")
+                        text = text.replace(ref_id, colored_cite)
 
                 sys.stdout.write(text)
                 sys.stdout.flush()
+
+    def on_message_done(self, message):
+        sys.stdout.write("\nReferences")
+        sys.stdout.write("\n----------")
+
+        for file_id, citation_id in self.annotations.items():
+            citation_text = f"\n[{citation_id}] {self.files[file_id]}"
+            sys.stdout.write(colored(citation_text, "yellow"))
+
+        sys.stdout.flush()
