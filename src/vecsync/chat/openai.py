@@ -3,6 +3,7 @@ from vecsync.store.openai import OpenAiVectorStore
 from vecsync.settings import Settings, SettingExists, SettingMissing
 import gradio as gr
 import sys
+from termcolor import colored
 
 
 class OpenAiChat:
@@ -175,7 +176,25 @@ class OpenAiChat:
 class PrintHandler(AssistantEventHandler):
     """Helper to print each text delta as it streams."""
 
-    def on_text_delta(self, delta, snapshot):
-        # delta.value is the new chunk of text
-        sys.stdout.write(delta.value)
-        sys.stdout.flush()
+    def on_message_delta(self, delta, snapshot):
+        annotations = {}
+        for content in delta.content:
+            if content.type == "text":
+                if content.text.annotations:
+                    for annotation in content.text.annotations:
+                        if annotation.type == "file_citation":
+                            annotations[annotation.text] = (
+                                annotation.file_citation.file_id
+                            )
+
+                text = content.text.value
+
+                if len(annotations) > 0:
+                    # TODO: Get file name from file_id
+                    # TODO: Get actual quote?
+                    for key, value in annotations.items():
+                        colored_cite = colored(f"[{value}]", "yellow")
+                        text = text.replace(key, colored_cite)
+
+                sys.stdout.write(text)
+                sys.stdout.flush()
