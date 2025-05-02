@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
+
 from termcolor import colored
 
 
-class BaseFormater(ABC):
+class BaseFormatter(ABC):
     @abstractmethod
     def format_citation(self, citation_id: str) -> str:
         raise NotImplementedError("Subclasses must implement this method")
@@ -23,7 +24,7 @@ class BaseFormater(ABC):
         return "".join(text_chunks)
 
 
-class ConsoleFormatter(BaseFormater):
+class ConsoleFormatter(BaseFormatter):
     def format_citation(self, citation_id: str) -> str:
         return colored(f"[{citation_id}]", "yellow")
 
@@ -31,7 +32,7 @@ class ConsoleFormatter(BaseFormater):
         return colored(f"\n[{citation_id}] {file_name}", "yellow")
 
 
-class GradioFormatter(BaseFormater):
+class GradioFormatter(BaseFormatter):
     def format_citation(self, citation_id: str) -> str:
         return f"<strong>[{citation_id}]</strong>"
 
