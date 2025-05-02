@@ -1,17 +1,17 @@
-from openai import AssistantEventHandler, OpenAI
-from vecsync.store.openai import OpenAiVectorStore
-from vecsync.settings import Settings, SettingExists, SettingMissing
-import gradio as gr
 import sys
-from queue import Queue, Empty
 from concurrent.futures import ThreadPoolExecutor
+from queue import Empty, Queue
+
+import gradio as gr
+from openai import AssistantEventHandler, OpenAI
+
 from vecsync.chat.utils import ConsoleFormatter, GradioFormatter
+from vecsync.settings import SettingExists, SettingMissing, Settings
+from vecsync.store.openai import OpenAiVectorStore
 
 
 class PrintHandler(AssistantEventHandler):
-    def __init__(
-        self, files: dict[str, str], formatter: ConsoleFormatter | GradioFormatter
-    ):
+    def __init__(self, files: dict[str, str], formatter: ConsoleFormatter | GradioFormatter):
         super().__init__()
         self.files = files
         self.queue = Queue()
@@ -28,9 +28,7 @@ class PrintHandler(AssistantEventHandler):
                 if content.text.annotations:
                     for annotation in content.text.annotations:
                         if annotation.type == "file_citation":
-                            delta_annotations[annotation.text] = (
-                                annotation.file_citation.file_id
-                            )
+                            delta_annotations[annotation.text] = annotation.file_citation.file_id
 
                 text = content.text.value
 
@@ -39,9 +37,7 @@ class PrintHandler(AssistantEventHandler):
                         # TODO: If there are multiple references to the same file then it prints the id several
                         # times such as "[1] [1] [1]". This should be fixed.
                         self.annotations.setdefault(file_id, len(self.annotations) + 1)
-                        citation = self.formatter.format_citation(
-                            self.annotations[file_id]
-                        )
+                        citation = self.formatter.format_citation(self.annotations[file_id])
                         text = text.replace(ref_id, citation)
 
                 text_chunks.append(text)
@@ -122,9 +118,7 @@ class OpenAiChat:
         del settings["openai_assistant_id"]
 
         print(f"🖥️ Assistant created: {assistant.name}")
-        print(
-            f"🔗 Assistant URL: https://platform.openai.com/assistants/{assistant.id}"
-        )
+        print(f"🔗 Assistant URL: https://platform.openai.com/assistants/{assistant.id}")
         settings["openai_assistant_id"] = assistant.id
         return assistant.id
 

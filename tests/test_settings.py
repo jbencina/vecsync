@@ -1,5 +1,6 @@
-from vecsync.settings import Settings, SettingExists, SettingMissing
 import json
+
+from vecsync.settings import SettingExists, SettingMissing, Settings
 
 
 def test_write_settings(tmp_path):
@@ -8,7 +9,7 @@ def test_write_settings(tmp_path):
     settings["test"] = "value"
     settings["test2"] = {"k": "v"}
 
-    with open(tmp_path / "settings.json", "r") as f:
+    with open(tmp_path / "settings.json") as f:
         data = json.load(f)
 
     assert data["test"] == "value"
@@ -31,7 +32,7 @@ def test_delete_settings(settings_fixture):
     settings = Settings(path=settings_fixture)
     del settings["test"]
 
-    with open(settings_fixture, "r") as f:
+    with open(settings_fixture) as f:
         data = json.load(f)
 
     assert "test" not in data
