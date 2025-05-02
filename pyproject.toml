@@ -75,6 +75,17 @@ dev = [
     "ruff>=0.11.6",
 ]
 
+[tool.coverage.run]
+branch = true
+source = ["src/vecsync"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+  # match the entire file contents if it has "# pragma: exclude file" anywhere
+  '\A(?s:.*# pragma: exclude file.*)\Z',
+]
+
 [tool.ruff]
 line-length = 120
 
