@@ -126,6 +126,7 @@ class OpenAiChat:
         )
 
         response = ""
+        delta_annotations = {}
         annotations = {}
 
         for event in stream:
@@ -135,24 +136,42 @@ class OpenAiChat:
                         if content.text.annotations:
                             for annotation in content.text.annotations:
                                 if annotation.type == "file_citation":
-                                    annotations[annotation.text] = (
+                                    delta_annotations[annotation.text] = (
                                         annotation.file_citation.file_id
                                     )
 
                         text = content.text.value
 
-                        # TODO: Get file name from file_id
-                        # TODO: Get actual quote?
+                        for ref_id, file_id in delta_annotations.items():
+                            annotations.setdefault(file_id, len(annotations) + 1)
+                            citation_id = annotations[file_id]
+
+                            v = f"<strong>[{citation_id}]</strong>"
+                            text = text.replace(ref_id, v)
+
                         # TODO: Apply to history
-                        for key, value in annotations.items():
-                            v = f"<span style='color: yellow;'>[{value}]</span>"
-                            text = text.replace(key, v)
 
                         response += text
+
                         yield response
+
+        reference_text = []
+        reference_text.append("\n")
+        reference_text.append("References")
+        reference_text.append("----------")
+
+        for file_id, citation_id in annotations.items():
+            citation_text = f"<strong>[{citation_id}]</strong> {self.files[file_id]}"
+            reference_text.append(citation_text)
+
+        response += "\n".join(reference_text)
+        yield response
 
     def gradio_chat(self, load_history: bool = True):
         history = self.load_history() if load_history else []
+
+        if self.files is None:
+            self.files = {f.id: f.name for f in self.vector_store.get_files()}
 
         # Gradio doesn't automatically scroll to the bottom of the chat window to accomodate
         # chat history so we add some JavaScript to perform this action on load
