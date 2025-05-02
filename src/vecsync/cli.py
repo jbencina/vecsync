@@ -19,7 +19,7 @@ def files():
 
     cprint(f"Files in store {store.name}:", "green")
     for file in files:
-        cprint(f" - {file}", "yellow")
+        cprint(f" - {file.name}", "yellow")
 
 
 @click.command()

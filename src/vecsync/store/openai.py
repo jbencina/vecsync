@@ -1,3 +1,4 @@
+from vecsync.store.base import StoredFile
 from openai import OpenAI
 from pathlib import Path
 from pydantic import BaseModel
@@ -34,9 +35,9 @@ class OpenAiVectorStore:
 
         raise ValueError(f"Vector store with name {self.name} not found.")
 
-    def get_files(self):
+    def get_files(self) -> list[StoredFile]:
         files = self.client.files.list()
-        return [file.filename for file in files]
+        return [StoredFile(id=file.id, name=file.filename) for file in files]
 
     def get_or_create(self):
         try:

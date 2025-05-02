@@ -3,6 +3,7 @@ from vecsync.store.openai import OpenAiVectorStore
 from vecsync.settings import Settings, SettingExists, SettingMissing
 import gradio as gr
 import sys
+from termcolor import colored
 
 
 class OpenAiChat:
@@ -15,6 +16,8 @@ class OpenAiChat:
         self.assistant_id = self._get_or_create_assistant()
 
         self.thread_id = None if new_conversation else self._get_thread_id()
+
+        self.files = None
 
     def _get_thread_id(self) -> str | None:
         settings = Settings()
@@ -87,6 +90,9 @@ class OpenAiChat:
     def chat(self, prompt: str) -> str:
         settings = Settings()
 
+        if self.files is None:
+            self.files = {f.id: f.name for f in self.vector_store.get_files()}
+
         if self.thread_id is None:
             thread = self.client.beta.threads.create()
             self.thread_id = thread.id
@@ -102,7 +108,7 @@ class OpenAiChat:
         with self.client.beta.threads.runs.stream(
             thread_id=self.thread_id,
             assistant_id=self.assistant_id,
-            event_handler=PrintHandler(),
+            event_handler=PrintHandler(files=self.files),
         ) as stream:
             stream.until_done()
 
@@ -120,20 +126,52 @@ class OpenAiChat:
         )
 
         response = ""
+        delta_annotations = {}
+        annotations = {}
 
         for event in stream:
             if event.event == "thread.message.delta":
-                for content_delta in event.data.delta.content or []:
-                    if (
-                        content_delta.type == "text"
-                        and content_delta.text
-                        and content_delta.text.value
-                    ):
-                        response += content_delta.text.value
+                for content in event.data.delta.content or []:
+                    if content.type == "text":
+                        if content.text.annotations:
+                            for annotation in content.text.annotations:
+                                if annotation.type == "file_citation":
+                                    delta_annotations[annotation.text] = (
+                                        annotation.file_citation.file_id
+                                    )
+
+                        text = content.text.value
+
+                        for ref_id, file_id in delta_annotations.items():
+                            annotations.setdefault(file_id, len(annotations) + 1)
+                            citation_id = annotations[file_id]
+
+                            v = f"<strong>[{citation_id}]</strong>"
+                            text = text.replace(ref_id, v)
+
+                        # TODO: Apply to history
+
+                        response += text
+
                         yield response
+
+        reference_text = []
+        reference_text.append("\n")
+        reference_text.append("References")
+        reference_text.append("----------")
+
+        for file_id, citation_id in annotations.items():
+            citation_text = f"<strong>[{citation_id}]</strong> {self.files[file_id]}"
+            reference_text.append(citation_text)
+
+        response += "\n".join(reference_text)
+        yield response
 
     def gradio_chat(self, load_history: bool = True):
         history = self.load_history() if load_history else []
+
+        if self.files is None:
+            self.files = {f.id: f.name for f in self.vector_store.get_files()}
 
         # Gradio doesn't automatically scroll to the bottom of the chat window to accomodate
         # chat history so we add some JavaScript to perform this action on load
@@ -175,7 +213,44 @@ class OpenAiChat:
 class PrintHandler(AssistantEventHandler):
     """Helper to print each text delta as it streams."""
 
-    def on_text_delta(self, delta, snapshot):
-        # delta.value is the new chunk of text
-        sys.stdout.write(delta.value)
+    def __init__(self, files: dict[str, str] = None):
+        super().__init__()
+        self.files = files
+        self.annotations = {}
+
+    def on_message_delta(self, delta, snapshot):
+        delta_annotations = {}
+        for content in delta.content:
+            if content.type == "text":
+                if content.text.annotations:
+                    for annotation in content.text.annotations:
+                        if annotation.type == "file_citation":
+                            delta_annotations[annotation.text] = (
+                                annotation.file_citation.file_id
+                            )
+
+                text = content.text.value
+
+                if len(delta_annotations) > 0:
+                    for ref_id, file_id in delta_annotations.items():
+                        # Update main lookup assigning a unique index to each citation
+                        # TODO: If there are multiple references to the same file then it prints the id several
+                        # times such as "[1] [1] [1]". This should be fixed.
+                        self.annotations.setdefault(file_id, len(self.annotations) + 1)
+                        citation_id = self.annotations[file_id]
+
+                        colored_cite = colored(f"[{citation_id}]", "yellow")
+                        text = text.replace(ref_id, colored_cite)
+
+                sys.stdout.write(text)
+                sys.stdout.flush()
+
+    def on_message_done(self, message):
+        sys.stdout.write("\nReferences")
+        sys.stdout.write("\n----------")
+
+        for file_id, citation_id in self.annotations.items():
+            citation_text = f"\n[{citation_id}] {self.files[file_id]}"
+            sys.stdout.write(colored(citation_text, "yellow"))
+
         sys.stdout.flush()
