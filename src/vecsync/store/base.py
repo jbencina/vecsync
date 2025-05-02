@@ -1,3 +1,5 @@
+# pragma: exclude file
+
 from pydantic import BaseModel
 
 

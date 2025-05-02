@@ -3,28 +3,28 @@ from concurrent.futures import ThreadPoolExecutor
 
 import gradio as gr
 
-from vecsync.chat.clients.openai import OpenAIClient, PrintHandler, consume_queue
-from vecsync.chat.format import ConsoleFormatter, GradioFormatter
+from vecsync.chat.clients.openai import OpenAIClient, OpenAIHandler
+from vecsync.chat.formatter import ConsoleFormatter, GradioFormatter
 
 
-class ConsoleUI:
+class ConsoleInterface:
     def __init__(self, client: OpenAIClient):
         self.client = client
         self.executor = ThreadPoolExecutor(max_workers=1)
 
     def prompt(self, prompt_text: str):
         fmt = ConsoleFormatter()
-        handler = PrintHandler(self.client.files, fmt)
+        handler = OpenAIHandler(self.client.files, fmt)
 
         self.client.send_message(self.client.thread_id, prompt_text)
 
         self.executor.submit(self.client.stream_response, self.client.thread_id, self.client.assistant_id, handler)
-        for chunk in consume_queue(handler):
+        for chunk in handler.consume_queue():
             sys.stdout.write(chunk)
             sys.stdout.flush()
 
 
-class GradioUI:
+class GradioInterface:
     def __init__(self, client: OpenAIClient):
         self.client = client
         self.executor = ThreadPoolExecutor(max_workers=1)
@@ -32,14 +32,14 @@ class GradioUI:
     def chat_interface(self):
         def gradio_prompt(message, history):
             fmt = GradioFormatter()
-            handler = PrintHandler(self.client.files, fmt)
+            handler = OpenAIHandler(self.client.files, fmt)
 
             self.client.send_message(self.client.thread_id, message)
 
             self.executor.submit(self.client.stream_response, self.client.thread_id, self.client.assistant_id, handler)
             response = ""
 
-            for chunk in consume_queue(handler):
+            for chunk in handler.consume_queue():
                 response += chunk
                 yield response
 

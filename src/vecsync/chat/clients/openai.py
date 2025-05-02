@@ -2,12 +2,14 @@ from queue import Empty, Queue
 
 from openai import AssistantEventHandler, OpenAI
 
-from vecsync.chat.format import ConsoleFormatter, GradioFormatter
+from vecsync.chat.formatter import ConsoleFormatter, GradioFormatter
 from vecsync.settings import SettingExists, SettingMissing, Settings
 from vecsync.store.openai import OpenAiVectorStore
 
 
-class PrintHandler(AssistantEventHandler):
+# TODO: This class will likely be refactored into common class across other client types. However
+# since we only have OpenAI at the moment, we'll keep it here for now.
+class OpenAIHandler(AssistantEventHandler):
     def __init__(self, files: dict[str, str], formatter: ConsoleFormatter | GradioFormatter):
         super().__init__()
         self.files = files
@@ -45,17 +47,16 @@ class PrintHandler(AssistantEventHandler):
         self.queue.put(text)
         self.active = False
 
-
-def consume_queue(handler: PrintHandler, timeout: float = 1.0):
-    """Pulls from handler.queue in real time, calls write_fn(text)."""
-    while handler.active or not handler.queue.empty():
-        try:
-            chunk = handler.queue.get(timeout=timeout)
-        except Empty:
-            continue
-        if chunk is None:
-            break
-        yield chunk
+    def consume_queue(self, timeout: float = 1.0):
+        """Pulls from handler.queue in real time, calls write_fn(text)."""
+        while self.active or not self.queue.empty():
+            try:
+                chunk = self.queue.get(timeout=timeout)
+            except Empty:
+                continue
+            if chunk is None:
+                break
+            yield chunk
 
 
 class OpenAIClient:
@@ -145,7 +146,7 @@ class OpenAIClient:
             settings = Settings()
             settings["openai_thread_id"] = self.thread_id
 
-    def _run_stream(self, handler: PrintHandler):
+    def _run_stream(self, handler: OpenAIHandler):
         with self.client.beta.threads.runs.stream(
             thread_id=self.thread_id,
             assistant_id=self.assistant_id,
