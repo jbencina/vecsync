@@ -5,7 +5,7 @@ from queue import Empty, Queue
 import gradio as gr
 from openai import AssistantEventHandler, OpenAI
 
-from vecsync.chat.utils import ConsoleFormatter, GradioFormatter
+from vecsync.chat.format import ConsoleFormatter, GradioFormatter
 from vecsync.settings import SettingExists, SettingMissing, Settings
 from vecsync.store.openai import OpenAiVectorStore
 
