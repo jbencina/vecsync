@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.5.0]
+### Added
+- Correct citation text in terminal and Gradio output
+- Multithreading for OpenAI response to better handle streaming responses 
+### Changed
+- Refactored interfaces to own classes
+- Refactored formatters to own classes
+- Gradio and terminal now use same OpenAI access pattern
+
 ## [0.4.0]
 ### Added
 - Basic Gradio chat interface with previous message history

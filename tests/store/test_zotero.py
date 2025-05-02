@@ -1,11 +1,13 @@
 import builtins
 import sqlite3
-import pytest
 from pathlib import Path
 
-# Adjust this import to match where you defined ZoteroStore & Collection
-from vecsync.store.zotero import ZoteroStore, Collection
+import pytest
+
 from vecsync.settings import SettingExists
+
+# Adjust this import to match where you defined ZoteroStore & Collection
+from vecsync.store.zotero import Collection, ZoteroStore
 
 
 def test_resolve_path_existing(monkeypatch, settings_mock):

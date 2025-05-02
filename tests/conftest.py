@@ -1,6 +1,8 @@
-from pytest import fixture
-from vecsync.settings import Settings, SettingExists, SettingMissing
 import sqlite3
+
+from pytest import fixture
+
+from vecsync.settings import SettingExists, SettingMissing, Settings
 
 
 @fixture(scope="session")
