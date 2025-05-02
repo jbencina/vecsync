@@ -99,7 +99,7 @@ def chat_assistant(new_conversation: bool):
         prompt = input("> ")
         if prompt.lower() == "exit":
             break
-        client.chat(prompt)
+        client.console_prompt(prompt)
 
 
 @click.command("ui")

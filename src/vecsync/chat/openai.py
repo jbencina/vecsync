@@ -3,7 +3,54 @@ from vecsync.store.openai import OpenAiVectorStore
 from vecsync.settings import Settings, SettingExists, SettingMissing
 import gradio as gr
 import sys
-from termcolor import colored
+from queue import Queue, Empty
+from concurrent.futures import ThreadPoolExecutor
+from vecsync.chat.utils import ConsoleFormatter, GradioFormatter
+
+
+class PrintHandler(AssistantEventHandler):
+    def __init__(
+        self, files: dict[str, str], formatter: ConsoleFormatter | GradioFormatter
+    ):
+        super().__init__()
+        self.files = files
+        self.queue = Queue()
+        self.annotations = {}
+        self.active = True
+        self.formatter = formatter
+
+    def on_message_delta(self, delta, snapshot):
+        delta_annotations = {}
+        text_chunks = []
+
+        for content in delta.content:
+            if content.type == "text":
+                if content.text.annotations:
+                    for annotation in content.text.annotations:
+                        if annotation.type == "file_citation":
+                            delta_annotations[annotation.text] = (
+                                annotation.file_citation.file_id
+                            )
+
+                text = content.text.value
+
+                if len(delta_annotations) > 0:
+                    for ref_id, file_id in delta_annotations.items():
+                        # TODO: If there are multiple references to the same file then it prints the id several
+                        # times such as "[1] [1] [1]". This should be fixed.
+                        self.annotations.setdefault(file_id, len(self.annotations) + 1)
+                        citation = self.formatter.format_citation(
+                            self.annotations[file_id]
+                        )
+                        text = text.replace(ref_id, citation)
+
+                text_chunks.append(text)
+        self.queue.put("".join(text_chunks))
+
+    def on_message_done(self, message):
+        text = self.formatter.get_references(self.annotations, self.files)
+        self.queue.put(text)
+        self.active = False
 
 
 class OpenAiChat:
@@ -18,6 +65,17 @@ class OpenAiChat:
         self.thread_id = None if new_conversation else self._get_thread_id()
 
         self.files = None
+
+    @staticmethod
+    def queue_iter(handler: PrintHandler):
+        while handler.active or not handler.queue.empty():
+            try:
+                chunk = handler.queue.get(timeout=1)
+            except Empty:
+                continue
+            if chunk is None:
+                break
+            yield chunk
 
     def _get_thread_id(self) -> str | None:
         settings = Settings()
@@ -87,7 +145,7 @@ class OpenAiChat:
 
         return history
 
-    def chat(self, prompt: str) -> str:
+    def initialize_chat(self):
         settings = Settings()
 
         if self.files is None:
@@ -99,75 +157,48 @@ class OpenAiChat:
             print(f"💬 Conversation started: {self.thread_id}")
             settings["openai_thread_id"] = self.thread_id
 
+    def _run_stream(self, handler: PrintHandler):
+        with self.client.beta.threads.runs.stream(
+            thread_id=self.thread_id,
+            assistant_id=self.assistant_id,
+            event_handler=handler,
+        ) as stream:
+            stream.until_done()
+
+    def prompt(self, prompt: str, formatter: ConsoleFormatter | GradioFormatter) -> str:
         _ = self.client.beta.threads.messages.create(
             thread_id=self.thread_id,
             role="user",
             content=prompt,
         )
 
-        with self.client.beta.threads.runs.stream(
-            thread_id=self.thread_id,
-            assistant_id=self.assistant_id,
-            event_handler=PrintHandler(files=self.files),
-        ) as stream:
-            stream.until_done()
+        executor = ThreadPoolExecutor(max_workers=1)
+        handler = PrintHandler(files=self.files, formatter=formatter)
+        executor.submit(self._run_stream, handler)
+        return handler
+
+    def console_prompt(self, prompt: str) -> str:
+        self.initialize_chat()
+
+        formatter = ConsoleFormatter()
+        handler = self.prompt(prompt, formatter)
+
+        for chunk in self.queue_iter(handler):
+            sys.stdout.write(chunk)
+            sys.stdout.flush()
 
     def gradio_prompt(self, message, history):
-        _ = self.client.beta.threads.messages.create(
-            thread_id=self.thread_id,
-            role="user",
-            content=message,
-        )
-
-        stream = self.client.beta.threads.runs.create(
-            thread_id=self.thread_id,
-            assistant_id=self.assistant_id,
-            stream=True,
-        )
+        formatter = GradioFormatter()
+        handler = self.prompt(message, formatter)
 
         response = ""
-        delta_annotations = {}
-        annotations = {}
-
-        for event in stream:
-            if event.event == "thread.message.delta":
-                for content in event.data.delta.content or []:
-                    if content.type == "text":
-                        if content.text.annotations:
-                            for annotation in content.text.annotations:
-                                if annotation.type == "file_citation":
-                                    delta_annotations[annotation.text] = (
-                                        annotation.file_citation.file_id
-                                    )
-
-                        text = content.text.value
-
-                        for ref_id, file_id in delta_annotations.items():
-                            annotations.setdefault(file_id, len(annotations) + 1)
-                            citation_id = annotations[file_id]
-
-                            v = f"<strong>[{citation_id}]</strong>"
-                            text = text.replace(ref_id, v)
-
-                        # TODO: Apply to history
-
-                        response += text
-
-                        yield response
-
-        reference_text = []
-        reference_text.append("\n")
-        reference_text.append("References")
-        reference_text.append("----------")
-
-        for file_id, citation_id in annotations.items():
-            citation_text = f"<strong>[{citation_id}]</strong> {self.files[file_id]}"
-            reference_text.append(citation_text)
-
-        response += "\n".join(reference_text)
-        yield response
+        for chunk in self.queue_iter(handler):
+            response += chunk
+            yield response
 
     def gradio_chat(self, load_history: bool = True):
+        self.initialize_chat()
+
         history = self.load_history() if load_history else []
 
         if self.files is None:
@@ -208,49 +239,3 @@ class OpenAiChat:
             )
 
             demo.launch()
-
-
-class PrintHandler(AssistantEventHandler):
-    """Helper to print each text delta as it streams."""
-
-    def __init__(self, files: dict[str, str] = None):
-        super().__init__()
-        self.files = files
-        self.annotations = {}
-
-    def on_message_delta(self, delta, snapshot):
-        delta_annotations = {}
-        for content in delta.content:
-            if content.type == "text":
-                if content.text.annotations:
-                    for annotation in content.text.annotations:
-                        if annotation.type == "file_citation":
-                            delta_annotations[annotation.text] = (
-                                annotation.file_citation.file_id
-                            )
-
-                text = content.text.value
-
-                if len(delta_annotations) > 0:
-                    for ref_id, file_id in delta_annotations.items():
-                        # Update main lookup assigning a unique index to each citation
-                        # TODO: If there are multiple references to the same file then it prints the id several
-                        # times such as "[1] [1] [1]". This should be fixed.
-                        self.annotations.setdefault(file_id, len(self.annotations) + 1)
-                        citation_id = self.annotations[file_id]
-
-                        colored_cite = colored(f"[{citation_id}]", "yellow")
-                        text = text.replace(ref_id, colored_cite)
-
-                sys.stdout.write(text)
-                sys.stdout.flush()
-
-    def on_message_done(self, message):
-        sys.stdout.write("\nReferences")
-        sys.stdout.write("\n----------")
-
-        for file_id, citation_id in self.annotations.items():
-            citation_text = f"\n[{citation_id}] {self.files[file_id]}"
-            sys.stdout.write(colored(citation_text, "yellow"))
-
-        sys.stdout.flush()
