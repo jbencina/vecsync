@@ -2,7 +2,8 @@ import click
 from dotenv import load_dotenv
 from termcolor import cprint
 
-from vecsync.chat.openai import OpenAiChat
+from vecsync.chat.clients.openai import OpenAIClient
+from vecsync.chat.ui import ConsoleUI, GradioUI
 from vecsync.settings import Settings
 from vecsync.store.file import FileStore
 from vecsync.store.openai import OpenAiVectorStore
@@ -92,7 +93,8 @@ def sync(source: str):
 )
 def chat_assistant(new_conversation: bool):
     """Chat with the assistant."""
-    client = OpenAiChat("test", new_conversation=new_conversation)
+    client = OpenAIClient("test", new_conversation=new_conversation)
+    ui = ConsoleUI(client)
     print('Type "exit" to quit at any time.')
 
     while True:
@@ -100,13 +102,14 @@ def chat_assistant(new_conversation: bool):
         prompt = input("> ")
         if prompt.lower() == "exit":
             break
-        client.console_prompt(prompt)
+        ui.prompt(prompt)
 
 
 @click.command("ui")
 def chat_ui():
-    client = OpenAiChat("test")
-    client.gradio_chat()
+    client = OpenAIClient("test")
+    ui = GradioUI(client)
+    ui.chat_interface()
 
 
 @click.group()

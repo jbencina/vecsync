@@ -1,8 +1,5 @@
-import sys
-from concurrent.futures import ThreadPoolExecutor
 from queue import Empty, Queue
 
-import gradio as gr
 from openai import AssistantEventHandler, OpenAI
 
 from vecsync.chat.format import ConsoleFormatter, GradioFormatter
@@ -49,7 +46,19 @@ class PrintHandler(AssistantEventHandler):
         self.active = False
 
 
-class OpenAiChat:
+def consume_queue(handler: PrintHandler, timeout: float = 1.0):
+    """Pulls from handler.queue in real time, calls write_fn(text)."""
+    while handler.active or not handler.queue.empty():
+        try:
+            chunk = handler.queue.get(timeout=timeout)
+        except Empty:
+            continue
+        if chunk is None:
+            break
+        yield chunk
+
+
+class OpenAIClient:
     def __init__(self, store_name: str, new_conversation: bool = False):
         self.client = OpenAI()
         self.vector_store = OpenAiVectorStore(store_name)
@@ -60,18 +69,7 @@ class OpenAiChat:
 
         self.thread_id = None if new_conversation else self._get_thread_id()
 
-        self.files = None
-
-    @staticmethod
-    def queue_iter(handler: PrintHandler):
-        while handler.active or not handler.queue.empty():
-            try:
-                chunk = handler.queue.get(timeout=1)
-            except Empty:
-                continue
-            if chunk is None:
-                break
-            yield chunk
+        self.files = {f.id: f.name for f in self.vector_store.get_files()}
 
     def _get_thread_id(self) -> str | None:
         settings = Settings()
@@ -140,15 +138,11 @@ class OpenAiChat:
         return history
 
     def initialize_chat(self):
-        settings = Settings()
-
-        if self.files is None:
-            self.files = {f.id: f.name for f in self.vector_store.get_files()}
-
         if self.thread_id is None:
             thread = self.client.beta.threads.create()
             self.thread_id = thread.id
             print(f"💬 Conversation started: {self.thread_id}")
+            settings = Settings()
             settings["openai_thread_id"] = self.thread_id
 
     def _run_stream(self, handler: PrintHandler):
@@ -159,77 +153,15 @@ class OpenAiChat:
         ) as stream:
             stream.until_done()
 
-    def prompt(self, prompt: str, formatter: ConsoleFormatter | GradioFormatter) -> str:
-        _ = self.client.beta.threads.messages.create(
-            thread_id=self.thread_id,
-            role="user",
-            content=prompt,
-        )
-
-        executor = ThreadPoolExecutor(max_workers=1)
-        handler = PrintHandler(files=self.files, formatter=formatter)
-        executor.submit(self._run_stream, handler)
-        return handler
-
-    def console_prompt(self, prompt: str) -> str:
+    def send_message(self, thread_id: str, prompt: str):
         self.initialize_chat()
 
-        formatter = ConsoleFormatter()
-        handler = self.prompt(prompt, formatter)
+        return self.client.beta.threads.messages.create(thread_id=thread_id, role="user", content=prompt)
 
-        for chunk in self.queue_iter(handler):
-            sys.stdout.write(chunk)
-            sys.stdout.flush()
-
-    def gradio_prompt(self, message, history):
-        formatter = GradioFormatter()
-        handler = self.prompt(message, formatter)
-
-        response = ""
-        for chunk in self.queue_iter(handler):
-            response += chunk
-            yield response
-
-    def gradio_chat(self, load_history: bool = True):
-        self.initialize_chat()
-
-        history = self.load_history() if load_history else []
-
-        if self.files is None:
-            self.files = {f.id: f.name for f in self.vector_store.get_files()}
-
-        # Gradio doesn't automatically scroll to the bottom of the chat window to accomodate
-        # chat history so we add some JavaScript to perform this action on load
-        # See: https://github.com/gradio-app/gradio/issues/11109
-
-        js = """
-                function Scrolldown() {
-                const targetNode = document.querySelector('[aria-label="chatbot conversation"]');
-                if (!targetNode) return;
-
-                targetNode.scrollTop = targetNode.scrollHeight;
-
-                const observer = new MutationObserver(() => {
-                    targetNode.scrollTop = targetNode.scrollHeight;
-                });
-
-                observer.observe(targetNode, { childList: true, subtree: true });
-                }
-
-            """
-        with gr.Blocks(theme=gr.themes.Base(), js=js) as demo:
-            bot = gr.Chatbot(value=history, height="70vh", type="messages")
-
-            gr.Markdown(
-                """
-                <center><h1>Vecsync Assistant</h1></center>
-                """
-            )
-
-            gr.ChatInterface(
-                fn=self.gradio_prompt,
-                type="messages",
-                chatbot=bot,
-            )
-
-            demo.launch()
+    def stream_response(self, thread_id: str, assistant_id: str, handler):
+        with self.client.beta.threads.runs.stream(
+            thread_id=thread_id,
+            assistant_id=assistant_id,
+            event_handler=handler,
+        ) as stream:
+            stream.until_done()
