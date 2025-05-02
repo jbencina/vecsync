@@ -31,7 +31,7 @@ def test_console_formatter_get_references(console_formatter):
     annotations = {"file1": "123", "file2": "456"}
     files = {"file1": "example1.txt", "file2": "example2.txt"}
     expected = (
-        "\n\nReferences\n----------"
+        "\n\nReferences\n----------\n"
         + colored("\n[123] example1.txt", "yellow")
         + colored("\n[456] example2.txt", "yellow")
     )
@@ -62,7 +62,7 @@ def test_gradio_formatter_get_references(gradio_formatter):
     annotations = {"file1": "123", "file2": "456"}
     files = {"file1": "example1.txt", "file2": "example2.txt"}
     expected = (
-        "\n\nReferences\n----------" + "<strong>[123]</strong> example1.txt" + "<strong>[456]</strong> example2.txt"
+        "\n\nReferences\n----------\n" + "<strong>[123]</strong> example1.txt" + "<strong>[456]</strong> example2.txt"
     )
     assert gradio_formatter.get_references(annotations, files) == expected
 
