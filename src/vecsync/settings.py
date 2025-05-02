@@ -1,8 +1,9 @@
-from appdirs import user_config_dir
-from pathlib import Path
 import json
-from pydantic import BaseModel
+from pathlib import Path
 from typing import Any
+
+from appdirs import user_config_dir
+from pydantic import BaseModel
 
 
 class SettingExists(BaseModel):
@@ -31,7 +32,7 @@ class Settings:
             self.file.unlink()
 
     def __getitem__(self, key: str) -> SettingExists | SettingMissing:
-        with open(self.file, "r") as f:
+        with open(self.file) as f:
             data = json.load(f)
             result = data.get(key, None)
 
@@ -41,7 +42,7 @@ class Settings:
             return SettingExists(key=key, value=result)
 
     def __delitem__(self, key: str):
-        with open(self.file, "r") as f:
+        with open(self.file) as f:
             data = json.load(f)
 
         if key in data:
@@ -51,7 +52,7 @@ class Settings:
             json.dump(data, f)
 
     def __setitem__(self, key: str, value: str):
-        with open(self.file, "r") as f:
+        with open(self.file) as f:
             data = json.load(f)
             data[key] = value
 

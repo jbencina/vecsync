@@ -1,11 +1,12 @@
 import click
 from dotenv import load_dotenv
 from termcolor import cprint
+
 from vecsync.chat.openai import OpenAiChat
+from vecsync.settings import Settings
+from vecsync.store.file import FileStore
 from vecsync.store.openai import OpenAiVectorStore
 from vecsync.store.zotero import ZoteroStore
-from vecsync.store.file import FileStore
-from vecsync.settings import Settings
 
 # --- Store commands ---
 load_dotenv(override=True)

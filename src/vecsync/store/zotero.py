@@ -1,8 +1,10 @@
 import sqlite3
-from pydantic import BaseModel
 from pathlib import Path
-from vecsync.settings import Settings, SettingExists, SettingMissing
+
+from pydantic import BaseModel
 from termcolor import cprint
+
+from vecsync.settings import SettingExists, SettingMissing, Settings
 
 
 class Collection(BaseModel):
@@ -34,20 +36,13 @@ class ZoteroStore:
         match settings["zotero_path"]:
             case SettingMissing():
                 default_path = Path.home() / "Zotero"
-                user_path = input(
-                    f"Enter the path to your Zotero directory (Default: {default_path}): "
-                )
+                user_path = input(f"Enter the path to your Zotero directory (Default: {default_path}): ")
 
-                if user_path.strip() == "":
-                    zotero_path = default_path
-                else:
-                    zotero_path = Path(user_path)
+                zotero_path = default_path if user_path.strip() == "" else Path(user_path)
 
                 # Check if the path exists
                 if not Path(zotero_path).exists():
-                    raise FileNotFoundError(
-                        f"Zotero path '{zotero_path}' does not exist."
-                    )
+                    raise FileNotFoundError(f"Zotero path '{zotero_path}' does not exist.")
 
                 settings["zotero_path"] = str(zotero_path)
             case SettingExists() as x:
@@ -66,9 +61,7 @@ class ZoteroStore:
                     print(f"[{collection.id}]: {collection.name}")
 
                 default_collection = collections[0].id
-                zotero_collection = input(
-                    f"Enter the collection ID to sync (Default: {default_collection}): "
-                )
+                zotero_collection = input(f"Enter the collection ID to sync (Default: {default_collection}): ")
 
                 if zotero_collection.strip() == "":
                     zotero_collection = default_collection

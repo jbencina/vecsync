@@ -1,10 +1,12 @@
-from vecsync.store.base import StoredFile
-from openai import OpenAI
 from pathlib import Path
-from pydantic import BaseModel
-from tqdm import tqdm
-from termcolor import cprint
 from time import perf_counter
+
+from openai import OpenAI
+from pydantic import BaseModel
+from termcolor import cprint
+from tqdm import tqdm
+
+from vecsync.store.base import StoredFile
 
 
 class SyncOperationResult(BaseModel):
@@ -65,15 +67,11 @@ class OpenAiVectorStore:
             )
 
     def _delete_files(self, files_to_remove: list[str]) -> set[str]:
-        cprint(
-            f"👋 Deleting {len(files_to_remove)} files from OpenAI file storage", "red"
-        )
+        cprint(f"👋 Deleting {len(files_to_remove)} files from OpenAI file storage", "red")
 
         removed_file_ids = []
         for file_id in tqdm(files_to_remove):
-            self.client.vector_stores.files.delete(
-                vector_store_id=self.store.id, file_id=file_id
-            )
+            self.client.vector_stores.files.delete(vector_store_id=self.store.id, file_id=file_id)
             self.client.files.delete(file_id=file_id)
             removed_file_ids.append(file_id)
 
@@ -117,9 +115,7 @@ class OpenAiVectorStore:
             remote_file_ids.difference_update(self._delete_files(files_to_remove))
 
         # Check vector storage
-        existing_vector_files = self.client.vector_stores.files.list(
-            vector_store_id=self.store.id
-        )
+        existing_vector_files = self.client.vector_stores.files.list(vector_store_id=self.store.id)
         existing_vector_file_ids = set([f.id for f in existing_vector_files])
 
         # Determine missing files

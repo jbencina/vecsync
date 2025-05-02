@@ -1,9 +1,11 @@
-from openai import AssistantEventHandler, OpenAI
-from vecsync.store.openai import OpenAiVectorStore
-from vecsync.settings import Settings, SettingExists, SettingMissing
-import gradio as gr
 import sys
+
+import gradio as gr
+from openai import AssistantEventHandler, OpenAI
 from termcolor import colored
+
+from vecsync.settings import SettingExists, SettingMissing, Settings
+from vecsync.store.openai import OpenAiVectorStore
 
 
 class OpenAiChat:
@@ -64,9 +66,7 @@ class OpenAiChat:
         del settings["openai_assistant_id"]
 
         print(f"🖥️ Assistant created: {assistant.name}")
-        print(
-            f"🔗 Assistant URL: https://platform.openai.com/assistants/{assistant.id}"
-        )
+        print(f"🔗 Assistant URL: https://platform.openai.com/assistants/{assistant.id}")
         settings["openai_assistant_id"] = assistant.id
         return assistant.id
 
@@ -136,9 +136,7 @@ class OpenAiChat:
                         if content.text.annotations:
                             for annotation in content.text.annotations:
                                 if annotation.type == "file_citation":
-                                    delta_annotations[annotation.text] = (
-                                        annotation.file_citation.file_id
-                                    )
+                                    delta_annotations[annotation.text] = annotation.file_citation.file_id
 
                         text = content.text.value
 
@@ -225,9 +223,7 @@ class PrintHandler(AssistantEventHandler):
                 if content.text.annotations:
                     for annotation in content.text.annotations:
                         if annotation.type == "file_citation":
-                            delta_annotations[annotation.text] = (
-                                annotation.file_citation.file_id
-                            )
+                            delta_annotations[annotation.text] = annotation.file_citation.file_id
 
                 text = content.text.value
 
