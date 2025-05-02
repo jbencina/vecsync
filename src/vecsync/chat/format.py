@@ -13,6 +13,9 @@ class BaseFormatter(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     def get_references(self, annotations: dict[str, str], files: dict[str, str]) -> str:
+        if len(annotations) == 0:
+            return ""
+
         text_chunks = []
         text_chunks.append("\n")
         text_chunks.append("\nReferences")
