@@ -19,7 +19,7 @@ class BaseFormatter(ABC):
         text_chunks = []
         text_chunks.append("\n")
         text_chunks.append("\nReferences")
-        text_chunks.append("\n----------")
+        text_chunks.append("\n----------\n")
 
         for file_id, citation_id in annotations.items():
             text_chunks.append(self.format_reference(citation_id, files[file_id]))
