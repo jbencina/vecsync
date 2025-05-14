@@ -154,10 +154,10 @@ class OpenAIClient:
         ) as stream:
             stream.until_done()
 
-    def send_message(self, thread_id: str, prompt: str):
+    def send_message(self, prompt: str):
         self.initialize_chat()
 
-        return self.client.beta.threads.messages.create(thread_id=thread_id, role="user", content=prompt)
+        return self.client.beta.threads.messages.create(thread_id=self.thread_id, role="user", content=prompt)
 
     def stream_response(self, thread_id: str, assistant_id: str, handler):
         with self.client.beta.threads.runs.stream(
