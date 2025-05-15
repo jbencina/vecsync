@@ -1,20 +1,14 @@
 import click
 from termcolor import cprint
 
+from vecsync.constants import DEFAULT_STORE_NAME
 from vecsync.store.openai import OpenAiVectorStore
 
 
 @click.command()
-@click.option(
-    "--store-name",
-    "-s",
-    type=str,
-    help="Name of the vector store",
-    default="default",
-)
-def list(store_name: str):
+def list():
     """List files in the remote vector store."""
-    store = OpenAiVectorStore(store_name)
+    store = OpenAiVectorStore(DEFAULT_STORE_NAME)
     files = store.get_files()
 
     cprint(f"Files in store {store.name}:", "green")
@@ -23,16 +17,9 @@ def list(store_name: str):
 
 
 @click.command()
-@click.option(
-    "--store-name",
-    "-s",
-    type=str,
-    help="Name of the vector store",
-    default="default",
-)
-def delete(store_name: str):
+def delete():
     """Delete all files in the remote vector store."""
-    vstore = OpenAiVectorStore(store_name)
+    vstore = OpenAiVectorStore(DEFAULT_STORE_NAME)
     vstore.delete()
 
 

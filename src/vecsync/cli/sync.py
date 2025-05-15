@@ -1,6 +1,7 @@
 import click
 from termcolor import cprint
 
+from vecsync.constants import DEFAULT_STORE_NAME
 from vecsync.store.file import FileStore
 from vecsync.store.openai import OpenAiVectorStore
 from vecsync.store.zotero import ZoteroStore
@@ -9,7 +10,6 @@ from vecsync.store.zotero import ZoteroStore
 @click.command()
 @click.option(
     "--source",
-    "-s",
     type=str,
     default="file",
     help="Choose the source (file or zotero).",
@@ -27,12 +27,12 @@ def sync(source: str):
     else:
         raise ValueError("Invalid source. Use 'file' or 'zotero'.")
 
-    vstore = OpenAiVectorStore("test")
+    vstore = OpenAiVectorStore(DEFAULT_STORE_NAME)
     vstore.get_or_create()
 
     files = store.get_files()
 
-    cprint(f"Synching {len(files)} files from local to OpenAI", "green")
+    cprint(f"Syncing {len(files)} files from local to OpenAI", "green")
 
     result = vstore.sync(files)
     cprint("🏁 Sync results:", "green")
