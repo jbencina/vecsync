@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from termcolor import cprint
 from tqdm import tqdm
 
-from vecsync.store.base import StoredFile
+from vecsync.store.base import FileStatus, StoredFile
 
 
 class SyncOperationResult(BaseModel):
@@ -38,8 +38,24 @@ class OpenAiVectorStore:
         raise ValueError(f"Vector store with name {self.name} not found.")
 
     def get_files(self) -> list[StoredFile]:
-        files = self.client.files.list()
-        return [StoredFile(id=file.id, name=file.filename) for file in files]
+        if not self.store:
+            self.get()
+
+        uploaded_files = self.client.files.list()
+        vector_store_files = set([f.id for f in self.client.vector_stores.files.list(vector_store_id=self.store.id)])
+
+        files = []
+
+        for file in uploaded_files:
+            files.append(
+                StoredFile(
+                    id=file.id,
+                    name=file.filename,
+                    status=FileStatus.ATTACHED if file.id in vector_store_files else FileStatus.DETACHED,
+                )
+            )
+
+        return files
 
     def get_or_create(self):
         try:

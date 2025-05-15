@@ -11,9 +11,11 @@ def list():
     store = OpenAiVectorStore(DEFAULT_STORE_NAME)
     files = store.get_files()
 
-    cprint(f"Files in store {store.name}:", "green")
+    num_total = len(files)
+
+    cprint(f"{num_total} Files in store '{store.name}':", "green")
     for file in files:
-        cprint(f" - {file.name}", "yellow")
+        cprint(f"\t✅{file.name}", "yellow")
 
 
 @click.command()
