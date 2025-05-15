@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.5.1]
+### Fixed
+- Fixed bug where an incorrect thread ID was referenced causing chats to fail
+- Add support for Python >= 3.10
+
 ## [0.5.0]
 ### Added
 - Correct citation text in terminal and Gradio output

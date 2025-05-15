@@ -16,7 +16,7 @@ class ConsoleInterface:
         fmt = ConsoleFormatter()
         handler = OpenAIHandler(self.client.files, fmt)
 
-        self.client.send_message(self.client.thread_id, prompt_text)
+        self.client.send_message(prompt_text)
 
         self.executor.submit(self.client.stream_response, self.client.thread_id, self.client.assistant_id, handler)
         for chunk in handler.consume_queue():
@@ -34,7 +34,7 @@ class GradioInterface:
             fmt = GradioFormatter()
             handler = OpenAIHandler(self.client.files, fmt)
 
-            self.client.send_message(self.client.thread_id, message)
+            self.client.send_message(message)
 
             self.executor.submit(self.client.stream_response, self.client.thread_id, self.client.assistant_id, handler)
             response = ""
