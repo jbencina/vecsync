@@ -1,13 +1,23 @@
 import click
+from termcolor import colored
 
 from vecsync.settings import Settings
 
 
-@click.command("clear")
-def clear_settings():
+@click.command()
+def clear():
     """Clear the settings file."""
     settings = Settings()
     settings.delete()
+
+
+@click.command()
+def info():
+    """Get the location and data of the settings file."""
+    settings = Settings()
+    data = settings.info()
+    click.echo(f"Settings file location: {colored(data.location, 'yellow')}")
+    click.echo(f"Settings file data:\n{colored(data.data, 'yellow')}")
 
 
 @click.group(name="settings")
@@ -16,4 +26,5 @@ def group():
     pass
 
 
-group.add_command(clear_settings)
+group.add_command(clear)
+group.add_command(info)

@@ -15,6 +15,11 @@ class SettingMissing(BaseModel):
     key: str
 
 
+class SettingData(BaseModel):
+    location: str
+    data: str
+
+
 class Settings:
     def __init__(self, path: str | None = None):
         self.file = path or Path(user_config_dir("vecsync")) / "settings.json"
@@ -30,6 +35,10 @@ class Settings:
     def delete(self):
         if self.file.exists():
             self.file.unlink()
+
+    def info(self) -> SettingData:
+        """Get the location and data of the settings file."""
+        return SettingData(location=str(self.file), data=self.file.read_text())
 
     def __getitem__(self, key: str) -> SettingExists | SettingMissing:
         with open(self.file) as f:
