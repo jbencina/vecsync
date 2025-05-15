@@ -58,7 +58,7 @@ dependencies = [
 ]
 
 [project.scripts]
-vs = "vecsync.cli:cli"
+vs = "vecsync.cli.entry:cli"
 
 [project.urls]
 Homepage = "https://vecsync.io"
