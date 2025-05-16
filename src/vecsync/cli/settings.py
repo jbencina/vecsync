@@ -12,7 +12,7 @@ def clear():
 
 
 @click.command()
-def info():
+def show():
     """Get the location and data of the settings file."""
     settings = Settings()
     data = settings.info()
@@ -27,4 +27,4 @@ def group():
 
 
 group.add_command(clear)
-group.add_command(info)
+group.add_command(show)
