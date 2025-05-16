@@ -7,7 +7,7 @@ from vecsync.constants import DEFAULT_STORE_NAME
 
 def start_console_chat(store_name: str):
     client = OpenAIClient(store_name=store_name)
-    client.get()
+    client.connect()
 
     ui = ConsoleInterface(client)
     print('Type "exit" to quit at any time.')
@@ -22,7 +22,7 @@ def start_console_chat(store_name: str):
 
 def start_ui_chat(store_name: str):
     client = OpenAIClient(store_name=store_name)
-    client.get()
+    client.connect()
 
     ui = GradioInterface(client)
     ui.chat_interface()

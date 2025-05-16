@@ -1,6 +1,7 @@
 from queue import Empty, Queue
 
 from openai import AssistantEventHandler, OpenAI
+from termcolor import cprint
 
 from vecsync.chat.clients.base import Assistant
 from vecsync.chat.formatter import ConsoleFormatter, GradioFormatter
@@ -67,7 +68,7 @@ class OpenAIClient:
         self.assistant_name = f"vecsync-{store_name}"
         self.connected = False
 
-    def get(self):
+    def connect(self):
         # Connect to the OpenAI vector store
         self.vector_store = OpenAiVectorStore(self.store_name)
         self.vector_store.get()
@@ -79,6 +80,13 @@ class OpenAIClient:
         # Load the files in the vector store
         self.files = {f.id: f.name for f in self.vector_store.get_files()}
         self.connected = True
+
+    def disconnect(self):
+        self.assistant_id = None
+        self.thread_id = None
+        self.files = None
+        self.vector_store = None
+        self.connected = False
 
     def _get_thread_id(self) -> str | None:
         settings = Settings()
@@ -93,9 +101,20 @@ class OpenAIClient:
     def _get_assistant_id(self):
         # Check if the assistant already exists
         existing_assistants = self.list_assistants()
+        count_assistants = len(existing_assistants)
 
-        # For now, manage only one assistant per store
-        if len(existing_assistants) > 0:
+        if count_assistants > 1:
+            # We only allow for one assistant per account at this time
+            # This state shouldn't happen, but if it does, we need to remove the extras
+            # to keep things clean
+
+            count_extra = count_assistants - 1
+            cprint(f"⚠️ Multiple vecsync assistants found in account. Cleaning up {count_extra} extras.", "yellow")
+
+            for assistant in existing_assistants[1:]:
+                self.delete_assistant(assistant.id)
+
+        if count_assistants > 0:
             id = existing_assistants[0].id
             print(f"✅ Assistant found remotely: {id}")
             return id
@@ -139,7 +158,7 @@ class OpenAIClient:
     def load_history(self) -> list[dict[str, str]]:
         """Fetch all prior messages in this thread"""
         if not self.connected:
-            self.get()
+            self.connect()
 
         history = []
         if self.thread_id is not None:
@@ -166,7 +185,7 @@ class OpenAIClient:
 
     def send_message(self, prompt: str):
         if not self.connected:
-            self.get()
+            self.connect()
 
         return self.client.beta.threads.messages.create(thread_id=self.thread_id, role="user", content=prompt)
 
@@ -181,7 +200,9 @@ class OpenAIClient:
     def list_assistants(self) -> list[Assistant]:
         """List all vecsync assistants in the OpenAI account.
 
-        This only returns vecsync assistants which are prefixed with "vecsync-".
+        This only returns vecsync assistants which are prefixed with "vecsync-". There should
+        only be one assistant per account, but this method is here to help with cleanup if
+        multiple assistants are created.
 
         Returns:
             list[Assistant]: A list of Assistant objects.
@@ -202,11 +223,8 @@ class OpenAIClient:
         """
         self.client.beta.assistants.delete(assistant_id)
 
-        settings = Settings()
-        del settings["openai_thread_id"]
-
-        self.assistant_id = None
-        self.thread_id = None
-        self.files = None
-        self.vector_store = None
-        self.connected = False
+        if self.assistant_id == assistant_id:
+            # If the assistant we just deleted is the one we are using, then we need to clear the settings
+            settings = Settings()
+            del settings["openai_thread_id"]
+            self.disconnect()
