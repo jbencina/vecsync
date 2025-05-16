@@ -1,5 +1,6 @@
 import click
 
+from vecsync.cli.assistants import group as assistants_group
 from vecsync.cli.chat import chat
 from vecsync.cli.settings import group as settings_group
 from vecsync.cli.store import group as store_group
@@ -12,7 +13,7 @@ def cli():
     pass
 
 
-for group in [store_group, settings_group]:
+for group in [assistants_group, store_group, settings_group]:
     cli.add_command(group)
 
 cli.add_command(sync)
