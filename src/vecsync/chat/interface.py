@@ -8,6 +8,17 @@ from vecsync.chat.formatter import ConsoleFormatter, GradioFormatter
 
 
 class ConsoleInterface:
+    """Interact with the assistant via the console.
+
+    This class allows for messages to be sent and received in a console environment. Multithreading
+    is used to allow for streaming responses.
+
+    Parameters
+    ----------
+    client : OpenAIClient
+        The OpenAI client used to send and receive messages.
+    """
+
     def __init__(self, client: OpenAIClient):
         self.client = client
         self.executor = ThreadPoolExecutor(max_workers=1)
@@ -25,6 +36,17 @@ class ConsoleInterface:
 
 
 class GradioInterface:
+    """Interact with the assistant via the Gradio UI.
+
+    This class allows for messages to be sent and received in a Gradio environment. Multithreading
+    is used to allow for streaming responses. The Gradio UI is launched locally.
+
+    Parameters
+    ----------
+    client : OpenAIClient
+        The OpenAI client used to send and receive messages.
+    """
+
     def __init__(self, client: OpenAIClient):
         self.client = client
         self.executor = ThreadPoolExecutor(max_workers=1)
