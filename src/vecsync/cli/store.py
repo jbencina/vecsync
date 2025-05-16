@@ -5,8 +5,8 @@ from vecsync.constants import DEFAULT_STORE_NAME
 from vecsync.store.openai import OpenAiVectorStore
 
 
-@click.command()
-def list():
+@click.command(name="list")
+def list_stores():
     """List files in the remote vector store."""
     store = OpenAiVectorStore(DEFAULT_STORE_NAME)
     files = store.get_files()
@@ -31,5 +31,5 @@ def group():
     pass
 
 
-group.add_command(list)
+group.add_command(list_stores)
 group.add_command(delete)

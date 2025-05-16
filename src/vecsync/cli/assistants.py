@@ -5,8 +5,8 @@ from vecsync.chat.clients.openai import OpenAIClient
 from vecsync.constants import DEFAULT_STORE_NAME
 
 
-@click.command()
-def list():
+@click.command(name="list")
+def list_assistants():
     """List all vecync assistants in the OpenAI account."""
     client = OpenAIClient(store_name=DEFAULT_STORE_NAME)
     assistants = client.list_assistants()
@@ -55,5 +55,5 @@ def group():
     pass
 
 
-group.add_command(list)
+group.add_command(list_assistants)
 group.add_command(clean)
