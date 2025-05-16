@@ -289,7 +289,7 @@ class OpenAIClient:
         return history
 
     def send_message(self, prompt: str):
-        """ ""Send a message to the OpenAI thread.
+        """Send a message to the OpenAI thread.
 
         Parameters
         ----------
