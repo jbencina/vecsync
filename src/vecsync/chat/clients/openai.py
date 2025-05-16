@@ -2,6 +2,7 @@ from queue import Empty, Queue
 
 from openai import AssistantEventHandler, OpenAI
 
+from vecsync.chat.clients.base import Assistant
 from vecsync.chat.formatter import ConsoleFormatter, GradioFormatter
 from vecsync.settings import SettingExists, SettingMissing, Settings
 from vecsync.store.openai import OpenAiVectorStore
@@ -166,3 +167,33 @@ class OpenAIClient:
             event_handler=handler,
         ) as stream:
             stream.until_done()
+
+    def list_assistants(self) -> list[Assistant]:
+        """List all vecsync assistants in the OpenAI account.
+
+        This only returns vecsync assistants which are prefixed with "vecsync-".
+
+        Returns:
+            list[Assistant]: A list of Assistant objects.
+        """
+        results = []
+
+        for assistant in self.client.beta.assistants.list():
+            if assistant.name.startswith("vecsync-"):
+                results.append(
+                    Assistant(
+                        id=assistant.id,
+                        name=assistant.name,
+                        is_active=assistant.id == self.assistant_id,
+                    )
+                )
+
+        return results
+
+    def delete_assistant(self, assistant_id: str):
+        """Delete an assistant from the OpenAI account.
+
+        Args:
+            assistant_id (str): The ID of the assistant to delete.
+        """
+        self.client.beta.assistants.delete(assistant_id)
