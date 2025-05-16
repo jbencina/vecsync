@@ -11,9 +11,12 @@ def list():
     client = OpenAIClient(store_name=DEFAULT_STORE_NAME)
     assistants = client.list_assistants()
 
-    cprint("Assistants in your OpenAI account:", "green", attrs=["bold"])
-    for i, assistant in enumerate(assistants):
-        cprint(f"  {i + 1}. Name: {assistant.name} ({assistant.id}) [Active: {assistant.is_active}]", "yellow")
+    if len(assistants) == 0:
+        cprint("No assistants found.", "green", attrs=["bold"])
+    else:
+        cprint("Assistants in your OpenAI account:", "green", attrs=["bold"])
+        for i, assistant in enumerate(assistants):
+            cprint(f"  {i + 1}. Name: {assistant.name} ({assistant.id})", "yellow")
 
 
 @click.command()
@@ -22,15 +25,13 @@ def clean():
     client = OpenAIClient(store_name=DEFAULT_STORE_NAME)
     assistants = client.list_assistants()
 
-    inactivate_assistants = [assistant for assistant in assistants if not assistant.is_active]
-
-    if len(inactivate_assistants) == 0:
-        cprint("No inactive assistants found.", "green", attrs=["bold"])
+    if len(assistants) == 0:
+        cprint("No deletable assistants found.", "green", attrs=["bold"])
         return
 
     cprint("Assistants in your OpenAI account:", "green", attrs=["bold"])
-    for i, assistant in enumerate(inactivate_assistants):
-        cprint(f"  {i + 1}. Name: {assistant.name} ({assistant.id}) [Inactive]", "yellow")
+    for i, assistant in enumerate(assistants):
+        cprint(f"  {i + 1}. Name: {assistant.name} ({assistant.id})", "yellow")
     cprint("Would you like to delete the following assistants? [y/N] ", "red", end="")
 
     confirm = input().strip().lower()
@@ -44,9 +45,8 @@ def clean():
         return
 
     for assistant in assistants:
-        if not assistant.is_active:
-            cprint(f"Deleting assistant {assistant.name} ({assistant.id})...", "red", attrs=["bold"])
-            client.delete_assistant(assistant.id)
+        cprint(f"Deleting assistant {assistant.name} ({assistant.id})...", "red", attrs=["bold"])
+        client.delete_assistant(assistant.id)
 
 
 @click.group(name="assistants")

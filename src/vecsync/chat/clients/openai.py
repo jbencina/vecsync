@@ -61,37 +61,46 @@ class OpenAIHandler(AssistantEventHandler):
 
 
 class OpenAIClient:
-    def __init__(self, store_name: str, new_conversation: bool = False):
+    def __init__(self, store_name: str):
         self.client = OpenAI()
-        self.vector_store = OpenAiVectorStore(store_name)
+        self.store_name = store_name
+        self.assistant_name = f"vecsync-{store_name}"
+        self.connected = False
+
+    def get(self):
+        # Connect to the OpenAI vector store
+        self.vector_store = OpenAiVectorStore(self.store_name)
         self.vector_store.get()
 
-        self.assistant_name = f"vecsync-{self.vector_store.store.name}"
-        self.assistant_id = self._get_or_create_assistant()
+        # Load the assistant and thread
+        self.assistant_id = self._get_assistant_id()
+        self.thread_id = self._get_thread_id()
 
-        self.thread_id = None if new_conversation else self._get_thread_id()
-
+        # Load the files in the vector store
         self.files = {f.id: f.name for f in self.vector_store.get_files()}
+        self.connected = True
 
     def _get_thread_id(self) -> str | None:
         settings = Settings()
 
         match settings["openai_thread_id"]:
             case SettingMissing():
-                return None
+                return self._create_thread()
             case SettingExists() as x:
                 print(f"✅ Thread found: {x.value}")
                 return x.value
 
-    def _get_or_create_assistant(self):
-        settings = Settings()
+    def _get_assistant_id(self):
+        # Check if the assistant already exists
+        existing_assistants = self.list_assistants()
 
-        match settings["openai_assistant_id"]:
-            case SettingExists() as x:
-                print(f"✅ Assistant found: {x.value}")
-                return x.value
-            case _:
-                return self._create_assistant()
+        # For now, manage only one assistant per store
+        if len(existing_assistants) > 0:
+            id = existing_assistants[0].id
+            print(f"✅ Assistant found remotely: {id}")
+            return id
+        else:
+            return self._create_assistant()
 
     def _create_assistant(self) -> str:
         instructions = """You are a helpful research assistant that can search through a large number
@@ -115,15 +124,23 @@ class OpenAIClient:
 
         settings = Settings()
         del settings["openai_thread_id"]
-        del settings["openai_assistant_id"]
 
         print(f"🖥️ Assistant created: {assistant.name}")
         print(f"🔗 Assistant URL: https://platform.openai.com/assistants/{assistant.id}")
-        settings["openai_assistant_id"] = assistant.id
         return assistant.id
+
+    def _create_thread(self) -> str:
+        thread = self.client.beta.threads.create()
+        print(f"💬 Conversation started: {thread.id}")
+        settings = Settings()
+        settings["openai_thread_id"] = thread.id
+        return thread.id
 
     def load_history(self) -> list[dict[str, str]]:
         """Fetch all prior messages in this thread"""
+        if not self.connected:
+            self.get()
+
         history = []
         if self.thread_id is not None:
             resp = self.client.beta.threads.messages.list(thread_id=self.thread_id)
@@ -139,14 +156,6 @@ class OpenAIClient:
 
         return history
 
-    def initialize_chat(self):
-        if self.thread_id is None:
-            thread = self.client.beta.threads.create()
-            self.thread_id = thread.id
-            print(f"💬 Conversation started: {self.thread_id}")
-            settings = Settings()
-            settings["openai_thread_id"] = self.thread_id
-
     def _run_stream(self, handler: OpenAIHandler):
         with self.client.beta.threads.runs.stream(
             thread_id=self.thread_id,
@@ -156,7 +165,8 @@ class OpenAIClient:
             stream.until_done()
 
     def send_message(self, prompt: str):
-        self.initialize_chat()
+        if not self.connected:
+            self.get()
 
         return self.client.beta.threads.messages.create(thread_id=self.thread_id, role="user", content=prompt)
 
@@ -180,13 +190,7 @@ class OpenAIClient:
 
         for assistant in self.client.beta.assistants.list():
             if assistant.name.startswith("vecsync-"):
-                results.append(
-                    Assistant(
-                        id=assistant.id,
-                        name=assistant.name,
-                        is_active=assistant.id == self.assistant_id,
-                    )
-                )
+                results.append(Assistant(id=assistant.id, name=assistant.name))
 
         return results
 
@@ -197,3 +201,12 @@ class OpenAIClient:
             assistant_id (str): The ID of the assistant to delete.
         """
         self.client.beta.assistants.delete(assistant_id)
+
+        settings = Settings()
+        del settings["openai_thread_id"]
+
+        self.assistant_id = None
+        self.thread_id = None
+        self.files = None
+        self.vector_store = None
+        self.connected = False
