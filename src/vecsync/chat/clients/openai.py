@@ -12,6 +12,21 @@ from vecsync.store.openai import OpenAiVectorStore
 # TODO: This class will likely be refactored into common class across other client types. However
 # since we only have OpenAI at the moment, we'll keep it here for now.
 class OpenAIHandler(AssistantEventHandler):
+    """Handler for OpenAI API events.
+
+    This class is used to handle streaming events from the OpenAI API. Internally, it puts all streaming
+    chunks into a Queue which allows for the streaming to be consumed in real time by other functions.
+
+    Parameters
+    ----------
+    files : dict[str, str]
+        A dictionary of file IDs and their corresponding names. This is used to format the citations
+        in the response.
+    formatter : ConsoleFormatter | GradioFormatter
+        The formatter to use for formatting the output of the response. This can be either a
+        ConsoleFormatter or GradioFormatter.
+    """
+
     def __init__(self, files: dict[str, str], formatter: ConsoleFormatter | GradioFormatter):
         super().__init__()
         self.files = files
@@ -21,6 +36,7 @@ class OpenAIHandler(AssistantEventHandler):
         self.formatter = formatter
 
     def on_message_delta(self, delta, snapshot):
+        # Handle the response chunk
         delta_annotations = {}
         text_chunks = []
 
@@ -45,12 +61,27 @@ class OpenAIHandler(AssistantEventHandler):
         self.queue.put("".join(text_chunks))
 
     def on_message_done(self, message):
+        # Append citations at the end of the response
         text = self.formatter.get_references(self.annotations, self.files)
         self.queue.put(text)
         self.active = False
 
     def consume_queue(self, timeout: float = 1.0):
-        """Pulls from handler.queue in real time, calls write_fn(text)."""
+        """Consume chunks from the queue.
+
+        Parameters
+        ----------
+        timeout : float
+            The timeout seconds for the queue. This is used to prevent blocking if there are no chunks
+            available in the queue.
+
+        Yields
+        ------
+        str
+            The chunks of text from the queue. This will yield until the queue is empty or the
+            active flag is set to False.
+        """
+
         while self.active or not self.queue.empty():
             try:
                 chunk = self.queue.get(timeout=timeout)
@@ -62,6 +93,18 @@ class OpenAIHandler(AssistantEventHandler):
 
 
 class OpenAIClient:
+    """OpenAI client for interacting with the OpenAI API.
+
+    This client is used to send messages to the OpenAI API and receive responses.
+
+    Parameters
+    ----------
+    store_name : str
+        The name of the vector store to use for this client. The named assistant will
+        be created in the form of "vecsync-{store_name}".
+
+    """
+
     def __init__(self, store_name: str):
         self.client = OpenAI()
         self.store_name = store_name
@@ -69,6 +112,19 @@ class OpenAIClient:
         self.connected = False
 
     def connect(self):
+        """Connect to the OpenAI API and load the assistant and thread.
+
+        There are four independent entitites in the OpenAI API:
+        1. Files: User files are uploaded to OpenAI and exist as an artifact which can be used in
+           several places. The file references are loaded here for translating ciation references.
+        2. Vector Store: The vector store is a collection of files which are used for RAG search
+           by the assistant. A vector store can be assigned to multiple assistants.
+        3. Assistant: The assistant is the entity which is used to interact with the OpenAI API.
+           We currently only support one assistant per OpenAI account.
+        4. Thread: The thread is the conversation history which is used to store messages between the
+           user and assistant. Threads are created whenever a new assistant is created, the user
+           deletes their settings file, or the user runs the application on a different machine.
+        """
         # Connect to the OpenAI vector store
         self.vector_store = OpenAiVectorStore(self.store_name)
         self.vector_store.get()
@@ -82,13 +138,24 @@ class OpenAIClient:
         self.connected = True
 
     def disconnect(self):
+        """Clear all OpenAI client state."""
         self.assistant_id = None
         self.thread_id = None
         self.files = None
         self.vector_store = None
         self.connected = False
 
-    def _get_thread_id(self) -> str | None:
+    def _get_thread_id(self) -> str:
+        """Locates or creates the thread ID
+
+        Thread IDs are stored locally in the user settings file. The ID is loaded from settings and
+        is created if it doesn't exist.
+
+        Returns
+        -------
+        str
+            The thread ID for the current conversation.
+        """
         settings = Settings()
 
         # TODO: Ideally we would grab the thread ID from OpenAI but there doesn't seem to be
@@ -100,7 +167,18 @@ class OpenAIClient:
                 print(f"✅ Thread found: {x.value}")
                 return x.value
 
-    def _get_assistant_id(self):
+    def _get_assistant_id(self) -> str:
+        """Locates or creates the assistant ID
+
+        Assistant IDs are stored in the OpenAI account. The ID is loaded from the account and is created
+        if it doesn't exist. There should only be one assistant per account at any point in time. This step
+        performs a cleanup check if multiple assistants are found.
+
+        Returns
+        -------
+        str
+            The assistant ID for the current conversation.
+        """
         # Check if the assistant already exists
         existing_assistants = self.list_assistants()
         count_assistants = len(existing_assistants)
@@ -124,6 +202,17 @@ class OpenAIClient:
             return self._create_assistant()
 
     def _create_assistant(self) -> str:
+        """Creates a new assistant in the OpenAI account.
+
+        The assistant is created with the name "vecsync-{store_name}" and is attached to the
+        user's vector store.
+
+        Returns
+        -------
+        str
+            The assistant ID for the current conversation.
+        """
+
         instructions = """You are a helpful research assistant that can search through a large number
         of journals and papers to help answer the user questions. You have been given a file store which contains
         the relevant documents the user is referencing. These documents should be your primary source of information.
@@ -151,6 +240,17 @@ class OpenAIClient:
         return assistant.id
 
     def _create_thread(self) -> str:
+        """Creates a new thread in the OpenAI account.
+
+        The new thread ID is stored in the local settings file since OpenAI doesn't provide a way to
+        remotely access the thread ID.
+
+        Returns
+        -------
+        str
+            The thread ID for the current conversation.
+        """
+
         thread = self.client.beta.threads.create()
         print(f"💬 Conversation started: {thread.id}")
         settings = Settings()
@@ -158,7 +258,18 @@ class OpenAIClient:
         return thread.id
 
     def load_history(self) -> list[dict[str, str]]:
-        """Fetch all prior messages in this thread"""
+        """Fetch all prior messages in this thread
+
+        This method loads the conversation history from the OpenAI API. The messages are sorted
+        by their creation time.
+
+        Returns
+        -------
+        list[dict[str, str]]
+            A list of dictionaries containing the role and content of each message.
+            The role is either "user" or "assistant".
+        """
+
         if not self.connected:
             self.connect()
 
@@ -177,21 +288,33 @@ class OpenAIClient:
 
         return history
 
-    def _run_stream(self, handler: OpenAIHandler):
-        with self.client.beta.threads.runs.stream(
-            thread_id=self.thread_id,
-            assistant_id=self.assistant_id,
-            event_handler=handler,
-        ) as stream:
-            stream.until_done()
-
     def send_message(self, prompt: str):
+        """ ""Send a message to the OpenAI thread.
+
+        Parameters
+        ----------
+        prompt : str
+            The message to send to the OpenAI thread.
+        """
+
         if not self.connected:
             self.connect()
 
         return self.client.beta.threads.messages.create(thread_id=self.thread_id, role="user", content=prompt)
 
     def stream_response(self, thread_id: str, assistant_id: str, handler):
+        """Generate a thread run and stream the response.
+
+        Parameters
+        ----------
+        thread_id : str
+            The ID of the thread to stream the response from.
+        assistant_id : str
+            The ID of the assistant to stream the response from.
+        handler : AssistantEventHandler
+            The event handler to use for processing the response.
+        """
+
         with self.client.beta.threads.runs.stream(
             thread_id=thread_id,
             assistant_id=assistant_id,
