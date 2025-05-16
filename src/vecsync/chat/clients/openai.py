@@ -91,6 +91,8 @@ class OpenAIClient:
     def _get_thread_id(self) -> str | None:
         settings = Settings()
 
+        # TODO: Ideally we would grab the thread ID from OpenAI but there doesn't seem to be
+        # a way to do that. So we are storing it in the settings file for now.
         match settings["openai_thread_id"]:
             case SettingMissing():
                 return self._create_thread()
