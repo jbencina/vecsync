@@ -1,6 +1,6 @@
 [project]
 name = "vecsync"
-version = "0.5.1"
+version = "0.6.0"
 description = "A simple command-line utility for synchronizing documents to vector storage for LLM interaction."
 readme = "README.md"
 authors = [
@@ -58,7 +58,7 @@ dependencies = [
 ]
 
 [project.scripts]
-vs = "vecsync.cli:cli"
+vs = "vecsync.cli.entry:cli"
 
 [project.urls]
 Homepage = "https://vecsync.io"
