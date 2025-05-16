@@ -224,9 +224,4 @@ class OpenAIClient:
             assistant_id (str): The ID of the assistant to delete.
         """
         self.client.beta.assistants.delete(assistant_id)
-
-        if self.assistant_id == assistant_id:
-            # If the assistant we just deleted is the one we are using, then we need to clear the settings
-            settings = Settings()
-            del settings["openai_thread_id"]
-            self.disconnect()
+        self.disconnect()
