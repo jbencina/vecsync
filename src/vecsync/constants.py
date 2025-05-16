@@ -1,0 +1,1 @@
+DEFAULT_STORE_NAME = "test"
