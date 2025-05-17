@@ -102,14 +102,17 @@ class OpenAIClient:
     store_name : str
         The name of the vector store to use for this client. The named assistant will
         be created in the form of "vecsync-{store_name}".
-
+    settings_path : str | None
+        The path to the settings file. If None, the default settings file will be used.
+        This is used to store the thread ID for the current conversation.
     """
 
-    def __init__(self, store_name: str):
+    def __init__(self, store_name: str, settings_path: str | None = None):
         self.client = OpenAI()
         self.store_name = store_name
         self.assistant_name = f"vecsync-{store_name}"
         self.connected = False
+        self.settings_path = settings_path
 
     def connect(self):
         """Connect to the OpenAI API and load the assistant and thread.
@@ -156,7 +159,7 @@ class OpenAIClient:
         str
             The thread ID for the current conversation.
         """
-        settings = Settings()
+        settings = Settings(path=self.settings_path)
 
         # TODO: Ideally we would grab the thread ID from OpenAI but there doesn't seem to be
         # a way to do that. So we are storing it in the settings file for now.
@@ -232,7 +235,7 @@ class OpenAIClient:
             model="gpt-4o-mini",
         )
 
-        settings = Settings()
+        settings = Settings(path=self.settings_path)
         del settings["openai_thread_id"]
 
         print(f"🖥️ Assistant created: {assistant.name}")
@@ -253,7 +256,7 @@ class OpenAIClient:
 
         thread = self.client.beta.threads.create()
         print(f"💬 Conversation started: {thread.id}")
-        settings = Settings()
+        settings = Settings(path=self.settings_path)
         settings["openai_thread_id"] = thread.id
         return thread.id
 
