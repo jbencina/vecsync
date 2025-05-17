@@ -21,7 +21,7 @@ class SettingData(BaseModel):
 
 
 class Settings:
-    def __init__(self, path: str | None = None):
+    def __init__(self, path: Path | None = None):
         self.file = path or Path(user_config_dir("vecsync")) / "settings.json"
 
         if not self.file.exists():
