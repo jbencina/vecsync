@@ -29,13 +29,20 @@ class MockMessageContent(BaseModel):
 
 
 class MockMessageData(BaseModel):
-    content: MockMessageContent
+    content: list[MockMessageContent]
+    created_at: int  # TODO: Check if this is really at both levels
+    role: str
 
 
 class MockMessage(BaseModel):
-    created_at: int
     data: MockMessageData
     thread_id: str
+    created_at: int
+
+
+class MockThreadMessageResponse(BaseModel):
+    thread_id: str
+    data: list[MockMessageData]
 
 
 class MockVectorStore(BaseModel):
@@ -121,15 +128,23 @@ def mock_client_backend():
 
     def create_message(**kwargs):
         created_at = int(datetime.now().timestamp())
+
         message = MockMessage(
             created_at=created_at,
             data=MockMessageData(
-                content=MockMessageContent(type="text", text=MockMessageContentText(value=kwargs["content"]))
+                created_at=created_at,
+                content=[MockMessageContent(type="text", text=MockMessageContentText(value=kwargs["content"]))],
+                role=kwargs["role"],
             ),
             thread_id=kwargs["thread_id"],
         )
         message_store.append(message)
         return message
+
+    def list_messages(**kwargs):
+        thread_id = kwargs["thread_id"]
+        messages = [message.data for message in message_store if message.thread_id == thread_id]
+        return MockThreadMessageResponse(thread_id=thread_id, data=messages)
 
     # attach methods
     assistants_ns = SimpleNamespace()
@@ -137,8 +152,13 @@ def mock_client_backend():
     assistants_ns.list = list_assistants
     assistants_ns.delete = delete_assistant
 
+    messages_ns = SimpleNamespace()
+    messages_ns.create = create_message
+    messages_ns.list = list_messages
+
     threads_ns = SimpleNamespace()
     threads_ns.create = create_thread
+    threads_ns.messages = messages_ns
 
     # build your “client”
     client = SimpleNamespace()
@@ -229,3 +249,21 @@ def test_get_assistant_id_multiple(mocked_client):
     assistant_id = mocked_client._get_assistant_id()
     assert assistant_id == "assistant_vecsync-1_1"
     assert len(mocked_client.client.beta.assistants.list()) == 1
+
+
+def test_load_history_none(mocked_client):
+    history = mocked_client.load_history()
+    assert history == []
+
+
+def test_load_history_valid(mocked_client):
+    mocked_client.send_message("Hello")
+    mocked_client.send_message("World")
+    mocked_client.client.beta.threads.messages.create(
+        thread_id=mocked_client.thread_id, role="assistant", content="Response"
+    )
+
+    history = mocked_client.load_history()
+
+    assert len(history) == 3
+    assert [x["role"] for x in history] == ["user", "user", "assistant"]
