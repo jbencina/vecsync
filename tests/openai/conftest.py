@@ -1,12 +1,13 @@
+import os
 from datetime import datetime
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
 
 import vecsync.chat.clients.openai as client_mod
 from vecsync.chat.clients.openai import OpenAIClient
-from vecsync.settings import Settings
 from vecsync.store.openai import OpenAiVectorStore
 
 
@@ -50,6 +51,24 @@ class MockVectorStore(BaseModel):
     name: str
 
 
+class MockFileUpload(BaseModel):
+    id: str
+    file: Any
+
+
+class MockFile(BaseModel):
+    id: str
+    filename: str
+
+
+class MockFileDeletedResult(BaseModel):
+    deleted: bool
+
+
+class MockVectorStoreDeletedResult(BaseModel):
+    deleted: bool
+
+
 def mock_vector_store():
     vector_store = []
     file_store = []
@@ -59,6 +78,13 @@ def mock_vector_store():
         store = MockVectorStore(id=f"vector_store_{len(vector_store) + 1}", name=name)
         vector_store.append(store)
         return store
+
+    def delete_vector_store(vector_store_id):
+        for store in vector_store:
+            if store.id == vector_store_id:
+                vector_store.remove(store)
+                return MockFileDeletedResult(deleted=True)
+        return MockFileDeletedResult(deleted=False)
 
     def list_vector_stores():
         return vector_store
@@ -78,20 +104,39 @@ def mock_vector_store():
         for file in file_store:
             if file.id == file_id:
                 file_store.remove(file)
+                return MockFileDeletedResult(deleted=True)
+        return MockFileDeletedResult(deleted=False)
+
+    def create_file(**kwargs):
+        base_name = os.path.basename(kwargs["file"].name)
+        file = MockFileUpload(id=f"file_{len(file_store) + 1}", file=kwargs["file"])
+        file_store.append(MockFile(id=file.id, filename=base_name))
+        return file
+
+    def create_and_poll(vector_store_id, file_id):
+        for store in vector_store:
+            if store.id == vector_store_id:
+                vector_file = MockFile(id=file_id, filename=f"file_{file_id}")
+                vector_file_store.append(vector_file)
+                return vector_file
+        return None
 
     # attach methods
     vs_files_ns = SimpleNamespace()
     vs_files_ns.list = list_vector_store_files
     vs_files_ns.delete = delete_vector_store_file
+    vs_files_ns.create_and_poll = create_and_poll
 
     stores_ns = SimpleNamespace()
     stores_ns.create = create_vector_store
+    stores_ns.delete = delete_vector_store
     stores_ns.list = list_vector_stores
     stores_ns.files = vs_files_ns
 
     files_ns = SimpleNamespace()
     files_ns.list = list_files
     files_ns.delete = delete_file
+    files_ns.create = create_file
 
     # build your “client”
     client = SimpleNamespace()
@@ -188,82 +233,12 @@ def mocked_client(tmp_path, mocked_vector_store, monkeypatch):
     return client
 
 
-def test_list_assistants(mocked_client):
-    mocked_client.client.beta.assistants.create(name="vecsync-1")
-    mocked_client.client.beta.assistants.create(name="vecsync-2")
-    mocked_client.client.beta.assistants.create(name="other-3")
-
-    assistants = mocked_client.list_assistants()
-
-    assert len(assistants) == 2
-
-
-def test_delete_assistant(mocked_client):
-    assistant = mocked_client.client.beta.assistants.create(name="vecsync-1")
-    mocked_client.client.beta.assistants.create(name="vecsync-2")
-
-    mocked_client.delete_assistant(assistant.id)
-
-    assert len(mocked_client.list_assistants()) == 1
-
-
-def test_create_thread(mocked_client):
-    thread_id = mocked_client._create_thread()
-    assert thread_id == "thread_1"
-
-
-def test_get_thread_id_new(mocked_client):
-    thread_id = mocked_client._get_thread_id()
-    assert thread_id == "thread_1"
-
-
-def test_get_thread_id_existing(mocked_client):
-    settings = Settings(path=mocked_client.settings_path)
-    settings["openai_thread_id"] = "thread_2"
-
-    thread_id = mocked_client._get_thread_id()
-    assert thread_id == "thread_2"
-
-
-def test_create_assistant(mocked_client, mocked_vector_store):
-    mocked_client.vector_store = mocked_vector_store
-    id = mocked_client._create_assistant()
-    assert id == "assistant_vecsync-test_store_1"
-
-
-def test_get_assistant_id_new(mocked_client, mocked_vector_store):
-    mocked_client.vector_store = mocked_vector_store
-    assistant_id = mocked_client._get_assistant_id()
-    assert assistant_id == "assistant_vecsync-test_store_1"
-
-
-def test_get_assistant_id_existing(mocked_client):
-    mocked_client.client.beta.assistants.create(name="vecsync-1")
-    assistant_id = mocked_client._get_assistant_id()
-    assert assistant_id == "assistant_vecsync-1_1"
-
-
-def test_get_assistant_id_multiple(mocked_client):
-    mocked_client.client.beta.assistants.create(name="vecsync-1")
-    mocked_client.client.beta.assistants.create(name="vecsync-2")
-    assistant_id = mocked_client._get_assistant_id()
-    assert assistant_id == "assistant_vecsync-1_1"
-    assert len(mocked_client.client.beta.assistants.list()) == 1
-
-
-def test_load_history_none(mocked_client):
-    history = mocked_client.load_history()
-    assert history == []
-
-
-def test_load_history_valid(mocked_client):
-    mocked_client.send_message("Hello")
-    mocked_client.send_message("World")
-    mocked_client.client.beta.threads.messages.create(
-        thread_id=mocked_client.thread_id, role="assistant", content="Response"
-    )
-
-    history = mocked_client.load_history()
-
-    assert len(history) == 3
-    assert [x["role"] for x in history] == ["user", "user", "assistant"]
+@pytest.fixture
+def create_test_upload(tmp_path):
+    files = set()
+    for i in range(3):
+        file = tmp_path / f"test_file_{i}.txt"
+        files.add(file)
+        with open(file, "w") as f:
+            f.write(f"This is test file {i}")
+    return files
