@@ -77,7 +77,7 @@ def sync(source: str):
         f"Saved: {result.files_saved} | Deleted: {result.files_deleted} | Skipped: {result.files_skipped} ",
         "yellow",
     )
-    cprint(f"Remote count: {result.updated_count}", "yellow")
+    cprint(f"Remote count: {result.remote_count}", "yellow")
     cprint(f"Duration: {result.duration:.2f} seconds", "yellow")
 
 
