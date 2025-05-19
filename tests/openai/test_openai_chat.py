@@ -89,7 +89,7 @@ def test_message(mocked_client, mocked_client_handler):
     while not mocked_client_handler.queue.empty():
         items.append(mocked_client_handler.queue.get_nowait())
 
-    assert items == ["This", "is", "a", "test", "messsage", "from", "the", "assistant"]
+    assert items == ["This", "is", "a", "test", "message", "from", "the", "assistant"]
 
 
 def test_consume_queue(mocked_client, mocked_client_handler):
@@ -97,4 +97,4 @@ def test_consume_queue(mocked_client, mocked_client_handler):
 
     items = list(mocked_client_handler.consume_queue())
 
-    assert items == ["This", "is", "a", "test", "messsage", "from", "the", "assistant"]
+    assert items == ["This", "is", "a", "test", "message", "from", "the", "assistant"]

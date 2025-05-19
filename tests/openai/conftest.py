@@ -223,7 +223,7 @@ def mock_client_backend():
                 return False
 
             def until_done(self):
-                text = """This is a test messsage from the assistant"""
+                text = """This is a test message from the assistant"""
                 for delta in text.split():
                     message = MockStreamResponse(
                         content=[
