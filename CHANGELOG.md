@@ -6,9 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [0.6.0]
 ### Added
-- Commands for `assistants list` and `assistants clean`
+- Added CLI commands for `assistants list` and `assistants clean`
 - Automatic cleanup of any extra assistants in user account when initiating chat
 - Added docstrings for undocumented functions
+- Test case coverage for most OpenAI chat and vector store operations [#15](https://github.com/jbencina/vecsync/issues/15)
 
 ### Changed
 - Updated CLI chat command to `vs chat`

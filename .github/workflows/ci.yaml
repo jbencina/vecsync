@@ -25,6 +25,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
+    env:
+      OPENAI_API_KEY: dummy_value_for_tests # Dummy value
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
