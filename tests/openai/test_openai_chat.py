@@ -80,3 +80,21 @@ def test_load_history_valid(mocked_client):
 
     assert len(history) == 3
     assert [x["role"] for x in history] == ["user", "user", "assistant"]
+
+
+def test_message(mocked_client, mocked_client_handler):
+    mocked_client.stream_response(thread_id="", assistant_id="", handler=mocked_client_handler)
+
+    items = []
+    while not mocked_client_handler.queue.empty():
+        items.append(mocked_client_handler.queue.get_nowait())
+
+    assert items == ["This", "is", "a", "test", "messsage", "from", "the", "assistant"]
+
+
+def test_consume_queue(mocked_client, mocked_client_handler):
+    mocked_client.stream_response(thread_id="", assistant_id="", handler=mocked_client_handler)
+
+    items = list(mocked_client_handler.consume_queue())
+
+    assert items == ["This", "is", "a", "test", "messsage", "from", "the", "assistant"]

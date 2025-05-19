@@ -7,7 +7,8 @@ import pytest
 from pydantic import BaseModel
 
 import vecsync.chat.clients.openai as client_mod
-from vecsync.chat.clients.openai import OpenAIClient
+from vecsync.chat.clients.openai import OpenAIClient, OpenAIHandler
+from vecsync.chat.formatter import ConsoleFormatter
 from vecsync.store.openai import OpenAiVectorStore
 
 
@@ -67,6 +68,25 @@ class MockFileDeletedResult(BaseModel):
 
 class MockVectorStoreDeletedResult(BaseModel):
     deleted: bool
+
+
+class MockStreamResponseAnnotation(BaseModel):
+    type: str
+    text: str
+
+
+class MockStreamResponseText(BaseModel):
+    value: str
+    annotations: list[MockStreamResponseAnnotation]
+
+
+class MockStreamResponseContent(BaseModel):
+    type: str
+    text: MockStreamResponseText
+
+
+class MockStreamResponse(BaseModel):
+    content: list[MockStreamResponseContent]
 
 
 def mock_vector_store():
@@ -191,6 +211,33 @@ def mock_client_backend():
         messages = [message.data for message in message_store if message.thread_id == thread_id]
         return MockThreadMessageResponse(thread_id=thread_id, data=messages)
 
+    def stream_response(**kwargs):
+        class StreamManager:
+            def __init__(self, handler):
+                self.handler = handler
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def until_done(self):
+                text = """This is a test messsage from the assistant"""
+                for delta in text.split():
+                    message = MockStreamResponse(
+                        content=[
+                            MockStreamResponseContent(
+                                type="text", text=MockStreamResponseText(value=delta, annotations=[])
+                            )
+                        ]
+                    )
+                    self.handler.on_message_delta(delta=message, snapshot=None)
+
+                self.handler.on_message_done(message=None)
+
+        return StreamManager(handler=kwargs["event_handler"])
+
     # attach methods
     assistants_ns = SimpleNamespace()
     assistants_ns.create = create_assistant
@@ -201,9 +248,13 @@ def mock_client_backend():
     messages_ns.create = create_message
     messages_ns.list = list_messages
 
+    runs_ns = SimpleNamespace()
+    runs_ns.stream = stream_response
+
     threads_ns = SimpleNamespace()
     threads_ns.create = create_thread
     threads_ns.messages = messages_ns
+    threads_ns.runs = runs_ns
 
     # build your “client”
     client = SimpleNamespace()
@@ -231,6 +282,14 @@ def mocked_client(tmp_path, mocked_vector_store, monkeypatch):
     client.client = mock_client_backend()
 
     return client
+
+
+@pytest.fixture
+def mocked_client_handler():
+    return OpenAIHandler(
+        files={"file_1", "filename.txt"},
+        formatter=ConsoleFormatter(),
+    )
 
 
 @pytest.fixture

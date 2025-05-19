@@ -63,7 +63,8 @@ class OpenAIHandler(AssistantEventHandler):
     def on_message_done(self, message):
         # Append citations at the end of the response
         text = self.formatter.get_references(self.annotations, self.files)
-        self.queue.put(text)
+        if len(text) > 0:
+            self.queue.put(text)
         self.active = False
 
     def consume_queue(self, timeout: float = 1.0):
