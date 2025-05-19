@@ -30,15 +30,15 @@ def start_ui_chat(store_name: str):
 
 @click.command("chat")
 @click.option(
-    "--use-ui",
+    "--ui",
     "-u",
     is_flag=True,
     help="Spawn an interactive UI instead of a console interface.",
 )
-def chat(use_ui: bool):
+def chat(ui: bool):
     """Chat with the assistant."""
 
-    if use_ui:
+    if ui:
         start_ui_chat(DEFAULT_STORE_NAME)
     else:
         start_console_chat(DEFAULT_STORE_NAME)
