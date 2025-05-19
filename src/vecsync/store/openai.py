@@ -6,14 +6,14 @@ from pydantic import BaseModel
 from termcolor import cprint
 from tqdm import tqdm
 
-from vecsync.store.base import StoredFile
+from vecsync.store.base import FileStatus, StoredFile
 
 
 class SyncOperationResult(BaseModel):
     files_saved: int
     files_deleted: int
     files_skipped: int
-    updated_count: int
+    remote_count: int
     duration: float
 
 
@@ -38,8 +38,24 @@ class OpenAiVectorStore:
         raise ValueError(f"Vector store with name {self.name} not found.")
 
     def get_files(self) -> list[StoredFile]:
-        files = self.client.files.list()
-        return [StoredFile(id=file.id, name=file.filename) for file in files]
+        if not self.store:
+            self.get()
+
+        uploaded_files = self.client.files.list()
+        vector_store_files = set([f.id for f in self.client.vector_stores.files.list(vector_store_id=self.store.id)])
+
+        files = []
+
+        for file in uploaded_files:
+            files.append(
+                StoredFile(
+                    id=file.id,
+                    name=file.filename,
+                    status=FileStatus.ATTACHED if file.id in vector_store_files else FileStatus.DETACHED,
+                )
+            )
+
+        return files
 
     def get_or_create(self):
         try:
@@ -72,8 +88,9 @@ class OpenAiVectorStore:
         removed_file_ids = []
         for file_id in tqdm(files_to_remove):
             self.client.vector_stores.files.delete(vector_store_id=self.store.id, file_id=file_id)
-            self.client.files.delete(file_id=file_id)
-            removed_file_ids.append(file_id)
+            result = self.client.files.delete(file_id=file_id)
+            if result.deleted:
+                removed_file_ids.append(file_id)
 
         return set(removed_file_ids)
 
@@ -131,6 +148,6 @@ class OpenAiVectorStore:
             files_saved=len(files_to_upload),
             files_deleted=len(files_to_remove),
             files_skipped=len(duplicate_file_names),
-            updated_count=len(existing_vector_file_ids | files_to_attach),
+            remote_count=len(existing_vector_file_ids | files_to_attach),
             duration=duration,
         )

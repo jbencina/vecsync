@@ -70,7 +70,7 @@ Duration: 8.93 seconds
 
  Sync from a Zotero collection. Interactive selections are remembered for future sessions.
 ```bash
-vs sync -s zotero
+vs sync -source zotero
 
 Enter the path to your Zotero directory (Default: /Users/jbencina/Zotero): 
 
@@ -96,11 +96,11 @@ vs settings clear
 ```
 
 #### Chat Interactions
-Use `vs assistant chat` to chat with uploaded documents via the command line. The responding assistant is automatically linked to your
-vector store. Alternatively, you can use `vs assistant ui` to spawn a local Gradio instance.
+Use `vs chat` to chat with uploaded documents via the command line. The responding assistant is automatically linked to your
+vector store. Alternatively, you can use `vs chat -u` to spawn a local Gradio instance.
 
 ```bash
-vs assistant chat
+vs chat
 ✅ Assistant found: asst_123456789
 Type "exit" to quit at any time.
 
@@ -112,7 +112,7 @@ The contents of the vector store collection primarily focus on machine learning 
 
 Conversations are remembered across sessions.
 ```bash
-vs assistant chat   
+vs chat   
 ✅ Assistant found: asst_123456789
 ✅ Thread found: thread_123456789
 Type "exit" to quit at any time.
@@ -123,7 +123,7 @@ Your last question to me was asking for a one sentence summary of the contents o
 
 Threads can be cleared using the `-n` flag.
 ```bash
-vs assistant chat -n
+vs chat -n
 ✅ Assistant found: asst_123456789
 Type "exit" to quit at any time.
 

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.6.0]
+### Added
+- Added CLI commands for `assistants list` and `assistants clean`
+- Automatic cleanup of any extra assistants in user account when initiating chat
+- Added docstrings for undocumented functions
+- Test case coverage for most OpenAI chat and vector store operations [#15](https://github.com/jbencina/vecsync/issues/15)
+
+### Changed
+- Updated CLI chat command to `vs chat`
+- Refactored CLI into separate modules
+- Removed assistant ID persistance from settings file and only attempt to retrieve assistant from API
+
 ## [0.5.1]
 ### Fixed
 - Fixed bug where an incorrect thread ID was referenced causing chats to fail

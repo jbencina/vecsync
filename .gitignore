@@ -8,8 +8,11 @@ wheels/
 
 # Development files
 .coverage
+.coverage.*
 .env
 *.pdf
 
 # Virtual environments
 .venv
+
+.DS_Store

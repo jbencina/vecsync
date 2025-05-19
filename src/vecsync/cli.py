@@ -77,7 +77,7 @@ def sync(source: str):
         f"Saved: {result.files_saved} | Deleted: {result.files_deleted} | Skipped: {result.files_skipped} ",
         "yellow",
     )
-    cprint(f"Remote count: {result.updated_count}", "yellow")
+    cprint(f"Remote count: {result.remote_count}", "yellow")
     cprint(f"Duration: {result.duration:.2f} seconds", "yellow")
 
 
@@ -85,15 +85,9 @@ def sync(source: str):
 
 
 @click.command("chat")
-@click.option(
-    "--new-conversation",
-    "-n",
-    is_flag=True,
-    help="Force the assistant to create a new thread.",
-)
-def chat_assistant(new_conversation: bool):
+def chat_assistant():
     """Chat with the assistant."""
-    client = OpenAIClient("test", new_conversation=new_conversation)
+    client = OpenAIClient("test")
     ui = ConsoleInterface(client)
     print('Type "exit" to quit at any time.')
 
