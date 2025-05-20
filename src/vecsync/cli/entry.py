@@ -1,3 +1,5 @@
+# pragma: exclude file
+
 import click
 
 from vecsync.cli.assistants import group as assistants_group

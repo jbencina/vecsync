@@ -4,13 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.6.1]
+### Added
+- Test cases for most CLI commands [#18](https://github.com/jbencina/vecsync/issues/18)
+### Changed
+- Moved OpenAI mock classes for better unit test sharing
+
 ## [0.6.0]
 ### Added
 - Added CLI commands for `assistants list` and `assistants clean`
 - Automatic cleanup of any extra assistants in user account when initiating chat
 - Added docstrings for undocumented functions
 - Test case coverage for most OpenAI chat and vector store operations [#15](https://github.com/jbencina/vecsync/issues/15)
-
 ### Changed
 - Updated CLI chat command to `vs chat`
 - Refactored CLI into separate modules

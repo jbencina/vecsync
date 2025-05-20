@@ -9,6 +9,7 @@ def clear():
     """Clear the settings file."""
     settings = Settings()
     settings.delete()
+    click.echo(colored("Settings file cleared.", "green"))
 
 
 @click.command()
