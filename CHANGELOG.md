@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.7.0]
+
 ## [0.6.1]
 ### Added
 - Test cases for most CLI commands [#18](https://github.com/jbencina/vecsync/issues/18)
