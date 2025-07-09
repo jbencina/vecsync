@@ -1,3 +1,4 @@
+from importlib import resources
 from queue import Empty, Queue
 
 from openai import AssistantEventHandler, OpenAI
@@ -106,14 +107,40 @@ class OpenAIClient:
     settings_path : str | None
         The path to the settings file. If None, the default settings file will be used.
         This is used to store the thread ID for the current conversation.
+    prompt_source : str | None
+        The path to the prompt source file. If None, the default prompt will be used.
     """
 
-    def __init__(self, store_name: str, settings_path: str | None = None):
+    def __init__(self, store_name: str, settings_path: str | None = None, prompt_source: str | None = None):
         self.client = OpenAI()
         self.store_name = store_name
         self.assistant_name = f"vecsync-{store_name}"
         self.connected = False
         self.settings_path = settings_path
+        self.prompt = self._get_prompt(prompt_source)
+
+    def _get_prompt(self, prompt_source: str | None = None) -> str:
+        """Get the prompt from the prompt source.
+
+        If a prompt source is provided, it will be used to load the prompt. Otherwise, the default
+        prompt will be used from the resources.
+
+        Parameters
+        ----------
+        prompt_source : str | None
+            The path to the prompt source file. If None, the default prompt will be used.
+
+        Returns
+        -------
+        str
+            The prompt to use for the assistant.
+        """
+        if prompt_source is not None:
+            with open(prompt_source) as f:
+                return f.read()
+        else:
+            with resources.files("vecsync.prompts").joinpath("default_prompt.txt").open("r") as f:
+                return f.read()
 
     def connect(self):
         """Connect to the OpenAI API and load the assistant and thread.
@@ -217,31 +244,9 @@ class OpenAIClient:
             The assistant ID for the current conversation.
         """
 
-        instructions = """# Role
-        You are an AI researcher and educator versed in state-of-the-art machine-learning theory and practice.
-
-        # Task
-        Using only the user-provided paper collection:
-        1. Answer the user's question in your own words.
-        2. Cite every factual claim to at least one paper.
-        3. If the question is ambiguous, ask a clarifying follow-up before answering.
-        4. If the user asks about fundamental concepts or requests an example, you can use your knowledge to answer.
-
-        # Style
-        - Insightful, friendly, professional.  
-        - Use clear analogies where appropriate.
-        - Include citations when referencing the document collection.
-        - Be transparent about any uncertainties or if the information is missing from the provided documents.
-        - Adapt responses to user's knowledge level
-
-        # Constraints
-        - Do not deviate from the user provided documents unless you are explaining fundamental concepts
-        - Do not repeat text verbatim from references without futher explaination
-        """
-
         assistant = self.client.beta.assistants.create(
             name=self.assistant_name,
-            instructions=instructions,
+            instructions=self.prompt,
             tools=[{"type": "file_search"}],
             tool_resources={
                 "file_search": {
