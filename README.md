@@ -6,23 +6,34 @@
 [![Actions status](https://github.com/jbencina/vecsync/actions/workflows/ci.yaml/badge.svg)](https://github.com/jbencina/vecsync/actions)
 
 A simple command-line utility for synchronizing documents to vector storage for LLM interaction. Vecsync helps you
-quickly chat with papers, journals, and other documents with minimal overhead.
+quickly chat with a collection of papers and journals by abstracting time consuming steps.
 
 - 📄 Upload a local collection of PDFs to a remote vector store
-- ✅ Automatically add and remove remote files to match local documents
-- ☺️ Simplify platform specific complexities
-- 👀 Synchronize with a Zotero collection
+- ✅ Automatically manage remote files to match local documents
 - 💬 Chat with documents from command line or local Gradio UI
+- 👀 Synchronize with a Zotero collection
 
+
+Start a discussion with two commands:
+```bash
+vs sync && vs chat
+```
 ![demo](docs/images/demo.gif)
 
-Local [Gradio](https://www.gradio.app) instance available for assistant interaction. Chat history across sessions is saved.
+Local [Gradio](https://www.gradio.app) instance with chat history is also available:
+```bash
+vs chat --ui
+```
 ![chat](docs/images/demo_chat.png)
 
 ## Getting Started
 > **OpenAI API Requirements**
 >
 > Currently vecsync only supports OpenAI for remote operations and requires a valid OpenAI key with credits. Visit https://openai.com/api/ for more information. Future improvements will allow more platform options and self-hosted models.
+
+> **Costs**
+>
+> Vecsync uses OpenAI gpt-4o-mini which is Input: $0.15/million tokens and Output: $0.60/million tokens. These costs are tied to your OpenAI account. See [pricing](https://platform.openai.com/docs/pricing) for details.
 
 ### Installation
 Install vecsync from PyPI.
@@ -37,16 +48,6 @@ export OPENAI_API_KEY=...
 You can also define the key via `.env` file using [dotenv](https://pypi.org/project/python-dotenv/)
 ```
 echo "OPENAI_API_KEY=…" > .env
-```
-
-### Development
-This project is still in early alpha, and users should frequent updates. Breaking changes will be avoided where possible.
-To use the latest code, clone the repository and install locally. In progress work uses the branch naming convention
-of `dev-0.0.1` and will have an accompanying open PR.
-```bash
-git clone -b dev-0.0.1 git@github.com:jbencina/vecsync.git
-cd vecsync
-uv sync && source .venv/bin/activate
 ```
 
 ### Usage
@@ -121,17 +122,12 @@ Type "exit" to quit at any time.
 Your last question to me was asking for a one sentence summary of the contents of my vector store collection.
 ```
 
-Threads can be cleared using the `-n` flag.
+### Development
+This project is still in early alpha, and users should frequent updates. Breaking changes will be avoided where possible.
+To use the latest code, clone the repository and install locally. In progress work uses the branch naming convention
+of `dev-0.0.1` and will have an accompanying open PR.
 ```bash
-vs chat -n
-✅ Assistant found: asst_123456789
-Type "exit" to quit at any time.
-
-> What was my last question to you?
-💬 Conversation started: thread_987654321
-
-Your last question was about searching for relevant information from a large number of journals and papers, emphasizing the importance of citing information from the provided sources without making up any content.
-
-# Assistant response is in reference to the system prompt
+git clone -b dev-0.0.1 git@github.com:jbencina/vecsync.git
+cd vecsync
+uv sync && source .venv/bin/activate
 ```
-
