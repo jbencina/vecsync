@@ -5,8 +5,8 @@ from vecsync.chat.interface import ConsoleInterface, GradioInterface
 from vecsync.constants import DEFAULT_STORE_NAME
 
 
-def start_console_chat(store_name: str):
-    client = OpenAIClient(store_name=store_name)
+def start_console_chat(store_name: str, prompt_source: str | None = None):
+    client = OpenAIClient(store_name=store_name, prompt_source=prompt_source)
     client.connect()
 
     ui = ConsoleInterface(client)
@@ -20,8 +20,8 @@ def start_console_chat(store_name: str):
         ui.prompt(prompt)
 
 
-def start_ui_chat(store_name: str):
-    client = OpenAIClient(store_name=store_name)
+def start_ui_chat(store_name: str, prompt_source: str | None = None):
+    client = OpenAIClient(store_name=store_name, prompt_source=prompt_source)
     client.connect()
 
     ui = GradioInterface(client)
@@ -35,10 +35,16 @@ def start_ui_chat(store_name: str):
     is_flag=True,
     help="Spawn an interactive UI instead of a console interface.",
 )
-def chat(ui: bool):
+@click.option(
+    "--prompt",
+    "-p",
+    type=str,
+    help="The path to the prompt source file used when creating a new assistant.",
+)
+def chat(ui: bool, prompt: str | None):
     """Chat with the assistant."""
 
     if ui:
-        start_ui_chat(DEFAULT_STORE_NAME)
+        start_ui_chat(DEFAULT_STORE_NAME, prompt)
     else:
-        start_console_chat(DEFAULT_STORE_NAME)
+        start_console_chat(DEFAULT_STORE_NAME, prompt)

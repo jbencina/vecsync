@@ -1,5 +1,7 @@
+from importlib import resources
 from queue import Empty, Queue
 
+from dotenv import load_dotenv
 from openai import AssistantEventHandler, OpenAI
 from termcolor import cprint
 
@@ -106,14 +108,42 @@ class OpenAIClient:
     settings_path : str | None
         The path to the settings file. If None, the default settings file will be used.
         This is used to store the thread ID for the current conversation.
+    prompt_source : str | None
+        The path to the prompt source file. If None, the default prompt will be used.
     """
 
-    def __init__(self, store_name: str, settings_path: str | None = None):
+    def __init__(self, store_name: str, settings_path: str | None = None, prompt_source: str | None = None):
+        load_dotenv(override=True)
+
         self.client = OpenAI()
         self.store_name = store_name
         self.assistant_name = f"vecsync-{store_name}"
         self.connected = False
         self.settings_path = settings_path
+        self.prompt = self._get_prompt(prompt_source)
+
+    def _get_prompt(self, prompt_source: str | None = None) -> str:
+        """Get the prompt from the prompt source.
+
+        If a prompt source is provided, it will be used to load the prompt. Otherwise, the default
+        prompt will be used from the resources.
+
+        Parameters
+        ----------
+        prompt_source : str | None
+            The path to the prompt source file. If None, the default prompt will be used.
+
+        Returns
+        -------
+        str
+            The prompt to use for the assistant.
+        """
+        if prompt_source is not None:
+            with open(prompt_source) as f:
+                return f.read()
+        else:
+            with resources.files("vecsync.prompts").joinpath("default_prompt.txt").open("r") as f:
+                return f.read()
 
     def connect(self):
         """Connect to the OpenAI API and load the assistant and thread.
@@ -217,16 +247,9 @@ class OpenAIClient:
             The assistant ID for the current conversation.
         """
 
-        instructions = """You are a helpful research assistant that can search through a large number
-        of journals and papers to help answer the user questions. You have been given a file store which contains
-        the relevant documents the user is referencing. These documents should be your primary source of information.
-        You may only use external knowledge if it is helpful in clarifying questions. It is very important that you
-        remain factual and cite information from the sources provided to you in the file store. You are not allowed
-        to make up information."""
-
         assistant = self.client.beta.assistants.create(
             name=self.assistant_name,
-            instructions=instructions,
+            instructions=self.prompt,
             tools=[{"type": "file_search"}],
             tool_resources={
                 "file_search": {
