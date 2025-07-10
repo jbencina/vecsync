@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [0.7.0]
+### Added
+- Prompts now stored as text file and can be overwritten via command line [#20](https://github.com/jbencina/vecsync/pull/20)
+### Fixed
+- `.env` file is correctly loaded, if present
 
 ## [0.6.1]
 ### Added
