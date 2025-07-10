@@ -5,22 +5,21 @@
 [![image](https://img.shields.io/pypi/pyversions/vecsync.svg)](https://pypi.python.org/pypi/vecsync)
 [![Actions status](https://github.com/jbencina/vecsync/actions/workflows/ci.yaml/badge.svg)](https://github.com/jbencina/vecsync/actions)
 
-A simple command-line utility for synchronizing documents to vector storage for LLM interaction. Vecsync helps you
-quickly chat with a collection of papers and journals by abstracting time consuming steps.
+A fast command-line utility for synchronizing journals and papers to OpenAI vector storage for chat interaction. Vecsync helps you research topics by simpliyfing your workflow.
 
-- 📄 Upload a local collection of PDFs to a remote vector store
-- ✅ Automatically manage remote files to match local documents
-- 💬 Chat with documents from command line or local Gradio UI
-- 👀 Synchronize with a Zotero collection
+- 📄 Synchronize a local collection of PDFs to a remote vector store
+- ✅ Automatically manage OpenAI files, vector store, and assistant
+- 💬 Quickly chat with documents from command line or local Gradio UI
+- 👀 Connect to a local [Zotero](https://www.zotero.org/) collection
 
 
-Start a discussion with two commands:
+**Sync and chat**
 ```bash
 vs sync && vs chat
 ```
 ![demo](docs/images/demo.gif)
 
-Local [Gradio](https://www.gradio.app) instance with chat history is also available:
+**Chat with [Gradio](https://www.gradio.app)**
 ```bash
 vs chat --ui
 ```
@@ -29,11 +28,11 @@ vs chat --ui
 ## Getting Started
 > **OpenAI API Requirements**
 >
-> Currently vecsync only supports OpenAI for remote operations and requires a valid OpenAI key with credits. Visit https://openai.com/api/ for more information. Future improvements will allow more platform options and self-hosted models.
+> Currently vecsync only supports OpenAI for remote operations and requires a valid OpenAI key with credits. Visit https://openai.com/api/ for more information.
 
 > **Costs**
 >
-> Vecsync uses OpenAI gpt-4o-mini which is Input: $0.15/million tokens and Output: $0.60/million tokens. These costs are tied to your OpenAI account. See [pricing](https://platform.openai.com/docs/pricing) for details.
+> Vecsync uses OpenAI gpt-4o-mini which is Input: $0.15/million tokens and Output: $0.60/million tokens. These costs are tied to your OpenAI API account. See [pricing](https://platform.openai.com/docs/pricing) for details.
 
 ### Installation
 Install vecsync from PyPI.
@@ -45,14 +44,14 @@ Set your OpenAI API key environment.
 ```
 export OPENAI_API_KEY=...
 ```
-You can also define the key via `.env` file using [dotenv](https://pypi.org/project/python-dotenv/)
+You can also define the key via `.env` file in the working directory.
 ```
 echo "OPENAI_API_KEY=…" > .env
 ```
 
 ### Usage
 
-#### Synching Collections
+#### Syncing Collections
 Use the `vs sync` command for all synching operations.
 
 Sync from local file path.
@@ -89,16 +88,9 @@ Remote count: 15
 Duration: 57.99 seconds
 ```
 
-#### Settings
-
-Settings are persisted in a local json file which can be purged.
-```bash
-vs settings clear
-```
-
 #### Chat Interactions
 Use `vs chat` to chat with uploaded documents via the command line. The responding assistant is automatically linked to your
-vector store. Alternatively, you can use `vs chat -u` to spawn a local Gradio instance.
+vector store. Alternatively, you can use `vs chat --ui` to spawn a local Gradio instance.
 
 ```bash
 vs chat
@@ -120,14 +112,4 @@ Type "exit" to quit at any time.
 
 > What was my last question to you? 
 Your last question to me was asking for a one sentence summary of the contents of my vector store collection.
-```
-
-### Development
-This project is still in early alpha, and users should frequent updates. Breaking changes will be avoided where possible.
-To use the latest code, clone the repository and install locally. In progress work uses the branch naming convention
-of `dev-0.0.1` and will have an accompanying open PR.
-```bash
-git clone -b dev-0.0.1 git@github.com:jbencina/vecsync.git
-cd vecsync
-uv sync && source .venv/bin/activate
 ```
