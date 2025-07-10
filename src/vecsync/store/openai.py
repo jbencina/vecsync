@@ -1,6 +1,7 @@
 from pathlib import Path
 from time import perf_counter
 
+from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel
 from termcolor import cprint
@@ -19,6 +20,7 @@ class SyncOperationResult(BaseModel):
 
 class OpenAiVectorStore:
     def __init__(self, name: str):
+        load_dotenv(override=True)
         self.client = OpenAI()
         self.name = name
         self.store = None

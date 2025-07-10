@@ -1,6 +1,7 @@
 from importlib import resources
 from queue import Empty, Queue
 
+from dotenv import load_dotenv
 from openai import AssistantEventHandler, OpenAI
 from termcolor import cprint
 
@@ -112,6 +113,8 @@ class OpenAIClient:
     """
 
     def __init__(self, store_name: str, settings_path: str | None = None, prompt_source: str | None = None):
+        load_dotenv(override=True)
+
         self.client = OpenAI()
         self.store_name = store_name
         self.assistant_name = f"vecsync-{store_name}"
